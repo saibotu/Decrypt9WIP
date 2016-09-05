@@ -1,5 +1,6 @@
 #include "fs.h"
 #include "draw.h"
+#include "hid.h"
 #include "platform.h"
 #include "decryptor/hashfile.h"
 #include "decryptor/nand.h"
@@ -85,8 +86,11 @@ u32 NandTransfer(u32 param) {
     Debug("");
     Debug("Step #0: Optional NAND backup");
     Debug("Press <B> to skip and continue without backup");
-    if (DumpNand(NB_MINSIZE) == 1)
-        return 1;
+    if (DumpNand(NB_MINSIZE) == 1) {
+        Debug("Failed, <A> to continue, <B> to stop");
+        if (!(InputWait() & BUTTON_A))
+            return 1;
+    }
     
     Debug("");
     Debug("Step #1: .SHA verification of CTRNAND image...");

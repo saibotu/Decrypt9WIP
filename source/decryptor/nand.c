@@ -1193,7 +1193,7 @@ u32 DumpGbaVcSave(u32 param)
         Debug("Warning: current CMAC does not match");
     
     // dump the file
-    if (OutputFileNameSelector(filename, "gbavcsave.bin", NULL) != 0)
+    if (OutputFileNameSelector(filename, "gbavc.sav", NULL) != 0)
         return 1;
     if (FileDumpData(filename, agbsave + 0x200, save_size) != save_size) {
         Debug("Error writing file");
@@ -1238,7 +1238,7 @@ u32 InjectGbaVcSave(u32 param)
     
     // get the save from file
     Debug("Encrypting & Injecting GBA VC Save...");
-    if (InputFileNameSelector(filename, "gbavcsave.bin", NULL, NULL, 0, save_size, false) != 0)
+    if (InputFileNameSelector(filename, "gbavc.sav", NULL, NULL, 0, save_size, false) != 0)
         return 1;
     if (FileGetData(filename, agbsave + 0x200, save_size, 0) != save_size)
         return 1;

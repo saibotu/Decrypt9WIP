@@ -969,12 +969,12 @@ u32 PutNandHeader(u8* header)
     u8 header_old[0x200];
     
     if (header != NULL) { // if header for injection is provided
-        // make a backup of the genuine header @0x200 (if genuine) first
+        // make a backup of the genuine header @0x400 (if genuine) first
         if ((ReadNandSectors(0, 1, header_old) == 0) && (CheckNandHeaderIntegrity(header_old) == 0))
-            WriteNandSectors(1, 1, header_old); // only basic checks here - this is for last resort
+            WriteNandSectors(2, 1, header_old); // only basic checks here - this is for last resort
     } else { // header == NULL -> restore genuine header
-        // grab the genuine header backup @0x200
-        if ((ReadNandSectors(1, 1, header_old) == 0) &&
+        // grab the genuine header backup @0x400
+        if ((ReadNandSectors(2, 1, header_old) == 0) &&
             ((CheckNandHeaderType(header_old) == NAND_HDR_UNK) || (CheckNandHeaderIntegrity(header_old) != 0))) {
             Debug("Genuine header backup not found");
             return 1;

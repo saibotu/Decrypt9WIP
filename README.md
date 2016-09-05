@@ -202,7 +202,7 @@ You may use this under the terms of the GNU General Public License GPL v2 or und
 * Archshift for starting this project and being a great project maintainer
 * b1l1s, Normmatt for their 'behind-the-scenes' work and for making arm9loaderhax support possible
 * Gelex for various code improvements and useful advice throughout D9 development
-* ihaveamac for first developing the simple CIA generation method and for being an immensive help in porting it
+* ihaveamac for first developing the simple CIA generation method and for being of great help in porting it
 * patois, delebile, SteveIce10 for Brahma and it's updates
 * mid-kid for CakeHax and for hosting freenode #Cakey
 * Shadowtrance, Syphurith, AuroraWright for being of great help developing various features
@@ -210,5 +210,5 @@ You may use this under the terms of the GNU General Public License GPL v2 or und
 * osilloscorpion and idgrepthat for enabling NTR cart dumps
 * profi200 for helpful hints that first made developing some features possible
 * Al3x_10m for helping me with countless hours of testing and useful advice
-* Datalogger, zoogie, atkfromabove, mixups, key1340, k8099, Supster131, stbinan, Wolfvak, imanoob, Stary2001 and countless others from freenode #Cakey and the GBAtemp forums for testing, feedback and helpful hints
+* liomajor, Datalogger, zoogie, atkfromabove, mixups, key1340, k8099, Supster131, stbinan, Wolfvak, imanoob, Stary2001 and countless others from freenode #Cakey and the GBAtemp forums for testing, feedback and helpful hints
 * Everyone I forgot about - if you think you deserve to be mentioned, just contact me

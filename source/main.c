@@ -33,14 +33,16 @@ MenuInfo menu[] =
         }
     },
     {
-        "Titlekey Options", 6,
+        "Ticket/Titlekey Options", 8,
         {
             { "Titlekey Decrypt (file)",      &CryptTitlekeysFile,    0 },
-            { "Titlekey Decrypt (SysNAND)",   &DumpTitlekeysNand,     0 },
-            { "Titlekey Decrypt (EmuNAND)",   &DumpTitlekeysNand,     N_EMUNAND },
             { "Titlekey Encrypt (file)",      &CryptTitlekeysFile,    TK_ENCRYPTED },
-            { "Titlekey Dump (SysNAND)",      &DumpTitlekeysNand,     TK_ENCRYPTED },
-            { "Titlekey Dump (EmuNAND)",      &DumpTitlekeysNand,     N_EMUNAND | TK_ENCRYPTED }
+            { "Titlekey Decrypt (SysNAND)",   &DumpTicketsTitlekeys,  0 },
+            { "Titlekey Decrypt (EmuNAND)",   &DumpTicketsTitlekeys,  N_EMUNAND },
+            { "Titlekey Dump (SysNAND)",      &DumpTicketsTitlekeys,  TK_ENCRYPTED },
+            { "Titlekey Dump (EmuNAND)",      &DumpTicketsTitlekeys,  N_EMUNAND | TK_ENCRYPTED },
+            { "Ticket Dump (SysNAND)",        &DumpTicketsTitlekeys,  TK_TICKETS },
+            { "Ticket Dump (EmuNAND)",        &DumpTicketsTitlekeys,  N_EMUNAND | TK_TICKETS }
         }
     },
     {

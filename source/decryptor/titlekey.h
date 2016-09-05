@@ -5,6 +5,7 @@
 #define MAX_ENTRIES 1024
 
 #define TK_ENCRYPTED (1<<0)
+#define TK_TICKETS   (1<<1)
 
 typedef struct {
     u32 commonKeyIndex;
@@ -24,4 +25,4 @@ u32 CryptTitlekey(TitleKeyEntry* entry, bool encrypt);
 
 // --> FEATURE FUNCTIONS <--
 u32 CryptTitlekeysFile(u32 param);
-u32 DumpTitlekeysNand(u32 param);
+u32 DumpTicketsTitlekeys(u32 param);

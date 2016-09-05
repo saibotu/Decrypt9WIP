@@ -122,7 +122,7 @@ u32 NandTransfer(u32 param) {
         if (GetUnitPlatform() != PLATFORM_N3DS) // extra safety, not actually needed
             return 1;
         Debug("Switching out NAND header first...");
-        if ((imgsize == O3DS_TRANSFER_SIZE) & // use hardcoded o3ds header
+        if ((imgsize == O3DS_TRANSFER_SIZE) && // use hardcoded o3ds header
             ((NCSD_header_o3ds_hdr_size != 0x200) || (PutNandHeader((u8*) NCSD_header_o3ds_hdr) != 0)))
             return 1;
         else if ((imgsize == N3DS_TRANSFER_SIZE) && (PutNandHeader(NULL) != 0)) // use N3DS header backup

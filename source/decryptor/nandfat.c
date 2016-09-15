@@ -717,7 +717,7 @@ u32 DumpNcchFirm(u32 firm_idx, bool version, bool a9l_decrypt)
         Debug("Verified okay!");
     }
     
-    if (a9l_decrypt && (firm_idx < 2)) { // only for N3DS NATIVE_FIRM / SAFE_MODE_FIRM
+    if (a9l_decrypt && (firm_idx < 4)) { // only for N3DS FIRMs
         Debug("Decrypting ARM9 binary...");
         if (DecryptFirmArm9Mem(firm_bin, firm_size) != 0)
             return 1;

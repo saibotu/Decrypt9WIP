@@ -1270,32 +1270,48 @@ u32 DecryptFirmArm9Mem(u8* firm, u32 f_size)
         return 1;
     }
     
-    // map the firm / get crypto type
-    u8* section2 = firm + getle32(firm + 0x40 + 0x00 + (0x30*2));
-    u32 s2_size = getle32(firm + 0x40 + 0x08 + (0x30*2));
-    Debug("FIRM size: %u Byte", f_size);
-    Debug("Section 2: %u Byte @ 0x%06X", s2_size, section2 - firm);
-    
-    // get keyX0x15
-    u8* keyX0x15 = section2;
-    CryptBufferInfo info = {.keyslot = 0x11, .setKeyY = 0, .buffer = keyX0x15, .size = 16, .mode = AES_CNT_ECB_DECRYPT_MODE};
-    memcpy(keyX0x15, section2, 16);
+    // search for encrypted arm9 binary
+    CryptBufferInfo info = {.keyslot = 0x11, .setKeyY = 0, .size = 16, .mode = AES_CNT_ECB_DECRYPT_MODE};
     if (SetupSecretKey0x11(0) != 0)
         return 1;
-    CryptBuffer(&info);
+    u8* arm9bin;
+    u32 bin_size;
+    u8* keyX0x15;
+    u32 section;
+    for (section = 0; section < 4; section++) {
+        u8 key[16];
+        arm9bin = firm + getle32(firm + 0x40 + 0x00 + (0x30*section));
+        bin_size = getle32(firm + 0x40 + 0x08 + (0x30*section));
+        if (!bin_size)
+            continue;
+        memcpy(key, arm9bin, 16);
+        info.buffer = key;
+        CryptBuffer(&info);
+        // check keyX0x15 hash (same for all)
+        u8* shasum[32];
+        sha_quick(shasum, key, 16, SHA256_MODE);
+        if (memcmp(shasum, keyX0x15hash, 32) == 0) {
+            memcpy(arm9bin, key, 16);
+            keyX0x15 = arm9bin;
+            break;
+        }
+    }
     
-    // check keyX0x15 hash (same for all)
-    u8* shasum[32];
-    sha_quick(shasum, keyX0x15, 16, SHA256_MODE);
-    if (memcmp(shasum, keyX0x15hash, 32) != 0) {
-        Debug("Section 2 does not look encrypted");
+    Debug("FIRM size: %u Byte", f_size);
+    
+    if (section > 4) {
+        Debug("Encrypted ARM9 binary: not found!");
         return 1;
     }
-    u32 crypto_type = (section2[0x53] == 0xFF) ? 0 : (section2[0x53] == '1') ? 1 : 2;
+    
+    Debug("Encrypted ARM9 binary: section %u", section);
+    Debug("Section %u: %u Byte @ 0x%06X", section, bin_size, arm9bin - firm);
+    
+    u32 crypto_type = (arm9bin[0x53] == 0xFF) ? 0 : (arm9bin[0x53] == '1') ? 1 : 2;
     Debug("Crypto Type: %s", (crypto_type == 0) ? "< 9.5" : (crypto_type == 1) ? "9.5" : ">= 9.6");
     
     // get keyY0x15, setup key0x15
-    u8* keyY0x15 = section2 + 0x10;
+    u8* keyY0x15 = arm9bin + 0x10;
     setup_aeskeyX(0x15, keyX0x15);
     setup_aeskeyY(0x15, keyY0x15);
     use_aeskey(0x15);
@@ -1303,7 +1319,7 @@ u32 DecryptFirmArm9Mem(u8* firm, u32 f_size)
     
     // key0x16 setup
     if (crypto_type) { // for FWs >= 9.5
-        u8* keyX0x16 = section2 + 0x60;
+        u8* keyX0x16 = arm9bin + 0x60;
         u8* keyY0x16 = keyY0x15;
         info.buffer = keyX0x16;
         if ((crypto_type == 2) && (SetupSecretKey0x11(1) != 0))
@@ -1317,24 +1333,24 @@ u32 DecryptFirmArm9Mem(u8* firm, u32 f_size)
     
     // get arm9 binary size
     u32 arm9bin_size = 0;
-    for (u32 i = 0; (i < 8) && *(section2 + 0x30 + i); i++)
-        arm9bin_size = (arm9bin_size * 10) + (*(section2 + 0x30 + i) - '0');
-    if (arm9bin_size + 0x800 > s2_size) {
+    for (u32 i = 0; (i < 8) && *(arm9bin + 0x30 + i); i++)
+        arm9bin_size = (arm9bin_size * 10) + (*(arm9bin + 0x30 + i) - '0');
+    if (arm9bin_size + 0x800 > bin_size) {
         Debug("Bad arm9 binary size (%u Byte)", arm9bin_size);
         return 1;
     }
     
     // decrypt arm9 binary
     Debug("Decrypting arm9 binary (%u Byte)...", arm9bin_size);
-    info.buffer = section2 + 0x800;
+    info.buffer = arm9bin + 0x800;
     info.size = arm9bin_size;
     info.mode = AES_CNT_CTRNAND_MODE;
     info.keyslot = (crypto_type) ? 0x16 : 0x15;
-    memcpy(info.ctr, section2 + 0x20, 16);
+    memcpy(info.ctr, arm9bin + 0x20, 16);
     CryptBuffer(&info);
     
     // recalculate section 2 hash
-    sha_quick(firm + 0x40 + 0x10 + (0x30*2), section2, s2_size, SHA256_MODE);
+    sha_quick(firm + 0x40 + 0x10 + (0x30*2), arm9bin, bin_size, SHA256_MODE);
     
     // mark FIRM as decrypted
     memcpy(firm, (u8*) "DECFIRM", 7);

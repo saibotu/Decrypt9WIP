@@ -12,7 +12,7 @@
 #define SCREEN_WIDTH_BOT 320
 #ifdef FONT_6X10 // special font width
 #define FONT_WIDTH_EXT 6
-#elifdef FONT_GB
+#elif defined FONT_GB // special font width
 #define FONT_WIDTH_EXT 7
 #else
 #define FONT_WIDTH_EXT 8
@@ -51,7 +51,7 @@
 #ifdef EXEC_GATEWAY
 	#define TOP_SCREEN (u8*)(*(u32*)((uint32_t)0x080FFFC0 + 4 * (*(u32*)0x080FFFD8 & 1)))
 	#define BOT_SCREEN (u8*)(*(u32*)((uint32_t)0x080FFFD0 + 4 * (*(u32*)0x080FFFDC & 1)))
-#elif defined(EXEC_A9LH)
+#elif defined EXEC_A9LH
 	#define TOP_SCREEN (u8*)(*(u32*)0x23FFFE00)
 	#define BOT_SCREEN (u8*)(*(u32*)0x23FFFE08)
 #else

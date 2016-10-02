@@ -386,8 +386,7 @@ u32 InitializeD9()
     
     if (InitFS()) {
         Debug("Initializing SD card... success");
-        FileGetData("d9logo.bin", BOT_SCREEN0, 320 * 240 * 3, 0);
-        memcpy(BOT_SCREEN1, BOT_SCREEN0, 320 * 240 * 3);
+        FileGetData("d9logo.bin", BOT_SCREEN, 320 * 240 * 3, 0);
         Debug("Build: %s", BUILD_NAME);
         Debug("Work directory: %s", GetWorkDir());
         Debug("Game directory: %s", GetGameDir());

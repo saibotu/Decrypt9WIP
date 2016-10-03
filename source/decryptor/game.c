@@ -102,9 +102,9 @@ u32 SdFolderSelector(char* path, u8* keyY)
     // let the user choose a directory
     u32 index = 0;
     strncpy(path, dirptr[0], 128);
-    Debug("Use arrow keys and <A> to choose a folder");
+    DebugColor(COLOR_ASK, "Use arrow keys and <A> to choose a folder");
     while (true) {
-        Debug("\r%s", path + 13 + 33 + 33);
+        DebugColor(COLOR_SELECT, "\r%s", path + 13 + 33 + 33);
         u32 pad_state = InputWait();
         u32 cur_lvl = strchrcount(path, '/');
         if (pad_state & BUTTON_DOWN) { // find next path of same level
@@ -123,10 +123,10 @@ u32 SdFolderSelector(char* path, u8* keyY)
             while ((index > 0) && (cur_lvl == strchrcount(dirptr[index], '/')))
                 index--;
         } else if (pad_state & BUTTON_A) {
-            Debug("%s", path + 13 + 33 + 33);
+            DebugColor(COLOR_ASK, "%s", path + 13 + 33 + 33);
             break;
         } else if (pad_state & BUTTON_B) {
-            Debug("(cancelled by user)");
+            DebugColor(COLOR_ASK, "(cancelled by user)");
             return 2;
         }
         strncpy(path, dirptr[index], 128);

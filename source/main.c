@@ -364,9 +364,9 @@ u32 InitializeD9()
     ClearScreenFull(true, true);
     DebugClear();
     #ifndef BUILD_NAME
-    Debug("-- Decrypt9 --");
+    DebugColor(COLOR_ACCENT, "-- Decrypt9 --");
     #else
-    Debug("-- %s --", BUILD_NAME);
+    DebugColor(COLOR_ACCENT, "-- %s --", BUILD_NAME);
     #endif
     
     // a little bit of information about the current menu
@@ -415,7 +415,7 @@ u32 InitializeD9()
     Debug("Initialization: %s", (errorlevel == 0) ? "success!" : (errorlevel == 1) ? "partially failed" : "failed!");
     
     if (((~HID_STATE & BUTTON_L1) && (~HID_STATE & BUTTON_R1)) || (errorlevel > 1)) {
-        Debug("(A to %s)", (errorlevel > 1) ? "exit" : "continue");
+        DebugColor(COLOR_ASK, "(A to %s)", (errorlevel > 1) ? "exit" : "continue");
         while (!(InputWait() & BUTTON_A));
     }
     

@@ -77,6 +77,19 @@ void DrawStringF(int x, int y, bool use_top, const char *format, ...)
         DrawString((use_top) ? TOP_SCREEN : BOT_SCREEN, text, x, y, STD_COLOR_FONT, STD_COLOR_BG);
 }
 
+void DrawStringFC(int x, int y, bool use_top, u32 color, const char *format, ...)
+{
+    char str[512] = { 0 }; // 512 should be more than enough
+    va_list va;
+
+    va_start(va, format);
+    vsnprintf(str, 512, format, va);
+    va_end(va);
+
+    for (char* text = strtok(str, "\n"); text != NULL; text = strtok(NULL, "\n"), y += 10)
+        DrawString((use_top) ? TOP_SCREEN : BOT_SCREEN, text, x, y, color, STD_COLOR_BG);
+}
+
 void Screenshot(const char* path)
 {
     u8* buffer = (u8*) 0x21000000; // careful, this area is used by other functions in Decrypt9

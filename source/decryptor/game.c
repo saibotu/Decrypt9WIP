@@ -814,55 +814,35 @@ u32 CryptGameFiles(u32 param)
     return !n_processed;
 }
 
-u32 BuildCiaStub(u8* stub, u8* ncchncsd)
+u32 BuildCiaStubTmd(u8* stub, TitleMetaData* tmd, u32 size_tmd)
 {
     // stub should have at least room for 16KiB (0x4000)
     const u8 sig_type[4] =  { 0x00, 0x01, 0x00, 0x04 };
-    u64 content_size[3] = { 0 };
-    u8 content_type[3] = { 0x00 };
-    u8 title_id[8] = { 0x00 };
-    u32 content_count = 0;
-    u8 cia_cnt_index = 0;
     CiaInfo cia;
     
     
     // set everything zero for a clean start
     memset(stub, 0, 0x4000);
     
-    // check type of provided ncchncsd header
-    if (memcmp(ncchncsd + 0x100, "NCCH", 4) == 0) {
-        NcchHeader* ncch = (NcchHeader*) ncchncsd;
-        cia_cnt_index = 1 << 7;
-        content_count = 1;
-        content_size[0] = ncch->size * 0x200;
-        content_type[0] = 0;
-        for (u32 i = 0; i < 8; i++)
-            title_id[i] = ((u8*) &(ncch->partitionId))[7-i];
-    } else if (memcmp(ncchncsd + 0x100, "NCSD", 4) == 0) {
-        NcsdHeader* ncsd = (NcsdHeader*) ncchncsd;
-        for (u32 p = 0; p < 3; p++) {
-            if (ncsd->partitions[p].size) {
-                cia_cnt_index |= (1 << (7-p)); // <-- might not be right
-                content_size[content_count] = ncsd->partitions[p].size * 0x200;
-                content_type[content_count++] = p;
-            }
-        }
-        for (u32 i = 0; i < 8; i++)
-            title_id[i] = ((u8*) &(ncsd->mediaId))[7-i];
-    } else {
-        Debug("Bad NCCH/NCSD header"); // meaning: developer did not pay attention
-        return 0;
-    }
-    
     // CIA header
     CiaHeader* header = (CiaHeader*) stub;
     header->size_header = sizeof(CiaHeader);
     header->size_cert = CIA_CERT_SIZE;
     header->size_ticket = sizeof(Ticket);
-    header->size_tmd = sizeof(TitleMetaData) + (content_count * sizeof(TmdContentChunk));
-    header->size_content = content_size[0] + content_size[1] + content_size[2];
+    header->size_tmd = size_tmd;
     header->size_meta = sizeof(CiaMeta);
-    header->content_index[0] = cia_cnt_index;
+    
+    // Extract info from TMD content list
+    TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
+    u32 content_count = getbe16(tmd->content_count);
+    u8* title_id = tmd->title_id;
+    for (u32 i = 0; i < content_count; i++) {
+        u32 index = getbe16(content_list[i].index);
+        header->size_content += getbe64(content_list[i].size);
+        header->content_index[index/8] |= (1 << (7-(index%8)));
+    }
+    
+    // Get CIA info
     GetCiaInfo(&cia, header);
     
     // Certificate chain
@@ -913,12 +893,53 @@ u32 BuildCiaStub(u8* stub, u8* ncchncsd)
     memcpy(ticket->content_index, ticket_cnt_index, sizeof(ticket_cnt_index));
     
     // TMD
-    TitleMetaData* tmd = (TitleMetaData*) (stub + cia.offset_tmd);
+    memcpy(stub + cia.offset_tmd, tmd, size_tmd);
+    
+    
+    return cia.offset_content;
+}
+
+u32 BuildCiaStubNcch(u8* stub, u8* ncchncsd)
+{
+    const u8 sig_type[4] =  { 0x00, 0x01, 0x00, 0x04 };
+    TitleMetaData* tmd = (TitleMetaData*) 0x20320000;
+    TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
+    u64 content_size[3] = { 0 };
+    u8 content_type[3] = { 0x00 };
+    u32 content_count = 0;
+    
+    
+    // set TMD all zero for a clean start
+    memset(tmd, 0x00, sizeof(TitleMetaData) + (3 * sizeof(TmdContentChunk)));
+    
+    // check type of provided ncchncsd header, extract data for TMD
+    if (memcmp(ncchncsd + 0x100, "NCCH", 4) == 0) {
+        NcchHeader* ncch = (NcchHeader*) ncchncsd;
+        content_count = 1;
+        content_size[0] = ncch->size * 0x200;
+        content_type[0] = 0;
+        for (u32 i = 0; i < 8; i++)
+            tmd->title_id[i] = ((u8*) &(ncch->partitionId))[7-i];
+    } else if (memcmp(ncchncsd + 0x100, "NCSD", 4) == 0) {
+        NcsdHeader* ncsd = (NcsdHeader*) ncchncsd;
+        for (u32 p = 0; p < 3; p++) {
+            if (ncsd->partitions[p].size) {
+                content_size[content_count] = ncsd->partitions[p].size * 0x200;
+                content_type[content_count++] = p;
+            }
+        }
+        for (u32 i = 0; i < 8; i++)
+            tmd->title_id[i] = ((u8*) &(ncsd->mediaId))[7-i];
+    } else {
+        Debug("Bad NCCH/NCSD header"); // meaning: developer did not pay attention
+        return 1;
+    }
+    
+    // TMD
     memcpy(tmd->sig_type, sig_type, 4);
     memset(tmd->signature, 0xFF, 0x100);
     snprintf((char*) tmd->issuer, 0x40, "Root-CA00000003-CP0000000b");
     tmd->version = 0x01;
-    memcpy(tmd->title_id, title_id, 8);
     tmd->title_type[3] = 0x40; // whatever
     memset(tmd->save_size, 0x00, 4); // placeholder
     tmd->content_count[1] = (u8) content_count;
@@ -927,19 +948,18 @@ u32 BuildCiaStub(u8* stub, u8* ncchncsd)
     memset(tmd->contentinfo[0].hash, 0xFF, 0x20); // placeholder (hash)
     
     // TMD content list
-    TmdContentChunk* content_list = (TmdContentChunk*) (stub + cia.offset_content_list);
     for (u32 i = 0; i < content_count; i++) {
-        content_list[i].id[3] = i;
-        content_list[i].index[1] = content_type[i];
+        content_list[i].id[3] = content_list[i].index[1] = content_type[i];
         for (u32 j = 0; j < 8; j++) // content size
             content_list[i].size[j] = (u8) (content_size[i] >> (8*(7-j)));
         memset(content_list[i].hash, 0xFF, 0x20); // placeholder (content hash)
     }
     
-    return cia.offset_content;
+    
+    return BuildCiaStubTmd(stub, tmd, sizeof(TitleMetaData) + (content_count * sizeof(TmdContentChunk)));
 }
 
-u32 FixCiaFile(const char* filename)
+u32 FinalizeCiaFile(const char* filename, bool meta_only)
 {
     u8* buffer = (u8*) 0x20316000;
     NcchHeader* ncch = (NcchHeader*) (0x20316000 + 0x4000);
@@ -961,123 +981,128 @@ u32 FixCiaFile(const char* filename)
     TitleMetaData* tmd = (TitleMetaData*) (buffer + cia.offset_tmd);
     TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
     
-    u32 next_offset = cia.offset_content;
+    // For first content: fix NCCH ExHeader, build metadata
     u32 content_count = getbe16(tmd->content_count);
-    for (u32 i = 0; i < content_count; i++) {
-        u32 size = (u32) getbe64(content_list[i].size);
-        u32 offset = next_offset;
-        next_offset = offset + size;
+    if (content_count && (getbe16(content_list[0].index) == 0)) {
+        if ((FileGetData(filename, ncch, 0x600, cia.offset_content) != 0x600) || (memcmp(ncch->magic, "NCCH", 4) != 0)) {
+            Debug("Failed reading NCCH content");
+            return 1;
+        }
         
-        // Fix NCCH ExHeader, build metadata (only for first content CXI)
-        if ((i == 0) && (getbe16(content_list[i].index) == 0)) {
-            if ((FileGetData(filename, ncch, 0x600, offset) != 0x600) || (memcmp(ncch->magic, "NCCH", 4) != 0)) {
-                Debug("Failed reading NCCH content");
-                return 1;
+        // init metadata with all zeroes
+        memset(meta, 0x00, sizeof(CiaMeta));
+        meta->core_version = 2;
+        
+        // prepare crypto stuff (even if it may not get used)
+        CryptBufferInfo info = {.setKeyY = 1, .keyslot = 0x2C, .buffer = exthdr, .size = 0x400, .mode = AES_CNT_CTRNAND_MODE};
+        memcpy(info.keyY, ncch->signature, 16);
+        if (ncch->flags[7] & 0x01) { // set up zerokey crypto instead
+            __attribute__((aligned(16))) u8 zeroKey[16] =
+                {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            info.setKeyY = 0;
+            info.keyslot = 0x11;
+            setup_aeskey(0x11, zeroKey);
+            use_aeskey(0x11);
+        }
+        
+        // process extheader
+        if (ncch->size_exthdr > 0) {
+            if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
+                GetNcchCtr(info.ctr, ncch, 1);
+                CryptBuffer(&info);
             }
-            
-            // init metadata with all zeroes
-            memset(meta, 0x00, sizeof(CiaMeta));
-            meta->core_version = 2;
-            
-            // prepare crypto stuff (even if it may not get used)
-            CryptBufferInfo info = {.setKeyY = 1, .keyslot = 0x2C, .buffer = exthdr, .size = 0x400, .mode = AES_CNT_CTRNAND_MODE};
-            memcpy(info.keyY, ncch->signature, 16);
-            if (ncch->flags[7] & 0x01) { // set up zerokey crypto instead
-                __attribute__((aligned(16))) u8 zeroKey[16] =
-                    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-                info.setKeyY = 0;
-                info.keyslot = 0x11;
-                setup_aeskey(0x11, zeroKey);
-                use_aeskey(0x11);
-            }
-            
-            // process extheader
-            if (ncch->size_exthdr > 0) {
-                if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
-                    GetNcchCtr(info.ctr, ncch, 1);
-                    CryptBuffer(&info);
-                }
+            if (!meta_only) {
                 exthdr[0xD] |= (1<<1); // set SD flag
                 memcpy(tmd->save_size, exthdr + 0x1C0, 4); // get save size for CXI
                 sha_quick(ncch->hash_exthdr, exthdr, 0x400, SHA256_MODE); // fix exheader hash
-                memcpy(meta->dependencies, exthdr + 0x40, 0x180); // copy dependencies to meta
-                if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
-                    GetNcchCtr(info.ctr, ncch, 1);
-                    CryptBuffer(&info);
-                }
             }
-            
-            // process ExeFS (for SMDH)
-            if (ncch->size_exefs > 0) {
-                u8 exefs_hdr[0x200];
-                u32 offset_exefs = ncch->offset_exefs * 0x200;
-                if (FileGetData(filename, exefs_hdr, 0x200, offset + offset_exefs) != 0x200) {
-                    Debug("Failed reading NCCH ExeFS content");
-                    return 1;
-                }
-                if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS
-                    info.buffer = exefs_hdr;
-                    info.size = 0x200;
-                    GetNcchCtr(info.ctr, ncch, 2);
-                    CryptBuffer(&info);
-                }
-                for (u32 j = 0; j < 10; j++) { // search for icon
-                    char* name_exefs_file = (char*) exefs_hdr + (j*0x10);
-                    u32 offset_exefs_file = getle32(exefs_hdr + (j*0x10) + 0x8) + 0x200;
-                    u32 size_exefs_file = align(getle32(exefs_hdr + (j*0x10) + 0xC), 0x10);
-                    if ((size_exefs_file > 0) && (size_exefs_file <= 0x36C0) && !(offset_exefs_file % 16) &&
-                        (strncmp(name_exefs_file, "icon", 8) == 0)) {
-                        if (FileGetData(filename, meta->smdh, size_exefs_file,
-                            offset + offset_exefs + offset_exefs_file) != size_exefs_file) {
-                            Debug("Failed reading NCCH ExeFS SMDH");
-                            return 1;
-                        }
-                        if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS SMDH
-                            info.buffer = meta->smdh;
-                            info.size = size_exefs_file;
-                            GetNcchCtr(info.ctr, ncch, 2);
-                            add_ctr(info.ctr, offset_exefs_file / 0x10);
-                            CryptBuffer(&info);
-                        }
-                        break;
-                    }
-                }
+            memcpy(meta->dependencies, exthdr + 0x40, 0x180); // copy dependencies to meta
+            if (!(ncch->flags[7] & 0x04)) { // encrypted NCCH
+                GetNcchCtr(info.ctr, ncch, 1);
+                CryptBuffer(&info);
             }
-            
-            // inject NCCH / exthdr back & append metadata
-            if (!FileOpen(filename))
-                return 1;
-            if (!DebugFileWrite(ncch, 0x400, offset) || !DebugFileWrite(meta, sizeof(CiaMeta), cia.offset_meta)) {
-                FileClose();
-                return 1;
-            }
-            FileClose();
         }
         
-        // (re)calculate hash
-        if (GetHashFromFile(filename, offset, size, content_list[i].hash) != 0) {
-            Debug("Hash recalculation failed!");
+        // process ExeFS (for SMDH)
+        if (ncch->size_exefs > 0) {
+            u8 exefs_hdr[0x200];
+            u32 offset_exefs = ncch->offset_exefs * 0x200;
+            if (FileGetData(filename, exefs_hdr, 0x200, cia.offset_content + offset_exefs) != 0x200) {
+                Debug("Failed reading NCCH ExeFS content");
+                return 1;
+            }
+            if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS
+                info.buffer = exefs_hdr;
+                info.size = 0x200;
+                GetNcchCtr(info.ctr, ncch, 2);
+                CryptBuffer(&info);
+            }
+            for (u32 j = 0; j < 10; j++) { // search for icon
+                char* name_exefs_file = (char*) exefs_hdr + (j*0x10);
+                u32 offset_exefs_file = getle32(exefs_hdr + (j*0x10) + 0x8) + 0x200;
+                u32 size_exefs_file = align(getle32(exefs_hdr + (j*0x10) + 0xC), 0x10);
+                if ((size_exefs_file > 0) && (size_exefs_file <= 0x36C0) && !(offset_exefs_file % 16) &&
+                    (strncmp(name_exefs_file, "icon", 8) == 0)) {
+                    if (FileGetData(filename, meta->smdh, size_exefs_file,
+                        cia.offset_content + offset_exefs + offset_exefs_file) != size_exefs_file) {
+                        Debug("Failed reading NCCH ExeFS SMDH");
+                        return 1;
+                    }
+                    if (!(ncch->flags[7] & 0x04)) { // encrypted ExeFS SMDH
+                        info.buffer = meta->smdh;
+                        info.size = size_exefs_file;
+                        GetNcchCtr(info.ctr, ncch, 2);
+                        add_ctr(info.ctr, offset_exefs_file / 0x10);
+                        CryptBuffer(&info);
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // inject NCCH / exthdr back & append metadata
+        if (!FileOpen(filename))
+            return 1;
+        if ((!meta_only && !DebugFileWrite(ncch, 0x400, cia.offset_content)) ||
+            !DebugFileWrite(meta, sizeof(CiaMeta), cia.offset_meta)) {
+            FileClose();
             return 1;
         }
-    }
-    
-    // fix other TMD hashes
-    for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
-        TmdContentInfo* cntinfo = tmd->contentinfo + i;
-        u32 k = getbe16(cntinfo->cmd_count);
-        sha_quick(cntinfo->hash, content_list + kc, k * sizeof(TmdContentChunk), SHA256_MODE);
-        kc += k;
-    }
-    sha_quick(tmd->contentinfo_hash, (u8*)tmd->contentinfo, 64 * sizeof(TmdContentInfo), SHA256_MODE);
-    
-    // inject fixed TMD back to CIA file
-    if (!FileOpen(filename))
-        return 1;
-    if (!DebugFileWrite(tmd, cia.size_tmd, cia.offset_tmd)) {
         FileClose();
-        return 1;
     }
-    FileClose();
+    
+    if (!meta_only) {
+        // fix content hashes
+        u32 next_offset = cia.offset_content;
+        for (u32 i = 0; i < content_count; i++) {
+            u32 size = (u32) getbe64(content_list[i].size);
+            u32 offset = next_offset;
+            next_offset = offset + size;
+            // (re)calculate hash
+            if (GetHashFromFile(filename, offset, size, content_list[i].hash) != 0) {
+                Debug("Hash recalculation failed!");
+                return 1;
+            }
+        }
+        
+        // fix other TMD hashes
+        for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
+            TmdContentInfo* cntinfo = tmd->contentinfo + i;
+            u32 k = getbe16(cntinfo->cmd_count);
+            sha_quick(cntinfo->hash, content_list + kc, k * sizeof(TmdContentChunk), SHA256_MODE);
+            kc += k;
+        }
+        sha_quick(tmd->contentinfo_hash, (u8*)tmd->contentinfo, 64 * sizeof(TmdContentInfo), SHA256_MODE);
+        
+        // inject fixed TMD back to CIA file
+        if (!FileOpen(filename))
+            return 1;
+        if (!DebugFileWrite(tmd, cia.size_tmd, cia.offset_tmd)) {
+            FileClose();
+            return 1;
+        }
+        FileClose();
+    }
     
     
     return 0;
@@ -1113,11 +1138,11 @@ u32 ConvertNcsdNcchToCia(u32 param)
         if ((memcmp(header + 0x100, "NCSD", 4) == 0) && (getle64(header + 0x110) != 0)) 
             continue; // skip NAND backup NCSDs
         
-        n_failed++; // this will be set back upon completion;
+        n_failed++; // this will be set back upon completion
         Debug("Converting to CIA: %s", path + path_len);
         
         // build the CIA stub
-        u32 stub_size = BuildCiaStub(stub, header);
+        u32 stub_size = BuildCiaStubNcch(stub, header);
         if (stub_size == 0) {
             Debug("Failed building the CIA stub");
             continue;
@@ -1171,7 +1196,7 @@ u32 ConvertNcsdNcchToCia(u32 param)
         
         // Fix the CIA file
         Debug("Finalizing CIA file...", stub_size);
-        if (FixCiaFile(filename) != 0) {
+        if (FinalizeCiaFile(filename, false) != 0) {
             Debug("Failed!");
             continue;
         }
@@ -1536,7 +1561,7 @@ u32 DumpCtrGameCart(u32 param)
         return 1; // should never happen
     }
     if (param & CD_MAKECIA) {
-        if (BuildCiaStub((u8*) cia_stub, (u8*) ncsd) == 0)
+        if (BuildCiaStubNcch((u8*) cia_stub, (u8*) ncsd) == 0)
             return 1;
         GetCiaInfo(&cia, cia_stub);
         dump_size = cia.size_cia;
@@ -1641,7 +1666,7 @@ u32 DumpCtrGameCart(u32 param)
     
     if ((param & CD_MAKECIA) && (result == 0)) {
         Debug("Finalizing CIA file...");
-        if (FixCiaFile(filename) != 0)
+        if (FinalizeCiaFile(filename, false) != 0)
             result = 1;
     }
     

@@ -196,7 +196,7 @@ typedef struct {
 
 u32 GetSdCtr(u8* ctr, const char* path);
 u32 GetNcchCtr(u8* ctr, NcchHeader* ncch, u8 sub_id);
-u32 SdFolderSelector(char* path, u8* keyY);
+u32 SdFolderSelector(char* path, u8* keyY, bool title_select);
 u32 CryptSdToSd(const char* filename, u32 offset, u32 size, CryptBufferInfo* info, bool handle_offset16);
 u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encrypt_flags);
 u32 CryptCia(const char* filename, u8* ncch_crypt, bool cia_encrypt, bool cxi_only);
@@ -207,5 +207,6 @@ u32 CryptGameFiles(u32 param);
 u32 ConvertNcsdNcchToCia(u32 param);
 u32 CryptSdFiles(u32 param);
 u32 DecryptSdFilesDirect(u32 param);
+u32 ConvertSdToCia(u32 param);
 u32 DumpGameCart(u32 param);
 u32 DumpPrivateHeader(u32 param);

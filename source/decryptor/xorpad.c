@@ -282,7 +282,7 @@ u32 SdPadgenDirect(u32 param)
         return 1; // movable.sed has to be present in NAND
     
     Debug("");
-    if (SdFolderSelector(basepath, movable_keyY) != 0)
+    if (SdFolderSelector(basepath, movable_keyY, false) != 0)
         return 1;
     Debug("");
     if (SdInfoGen(info, basepath) != 0)

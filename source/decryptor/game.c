@@ -61,7 +61,7 @@ u32 GetNcchCtr(u8* ctr, NcchHeader* ncch, u8 sub_id) {
     return 0;
 }
 
-u32 SdFolderSelector(char* path, u8* keyY)
+u32 SdFolderSelector(char* path, u8* keyY, bool title_select)
 {
     char** dirptr = (char**) 0x20400000; // allow using 0x8000 byte
     char* dirlist = (char*) 0x20408000; // allow using 0x80000 byte
@@ -89,6 +89,8 @@ u32 SdFolderSelector(char* path, u8* keyY)
             continue; // allow a maximum depth of 6 for the full folder
         char* subdir = dir + 13 + 33 + 33; // length of ("/Nintendo 3DS" + "/<id0>" + "/<id1>");
         if ((strncmp(subdir, "/dbs", 4) != 0) && (strncmp(subdir, "/extdata", 8) != 0) && (strncmp(subdir, "/title", 6) != 0))
+            continue;
+        if (title_select && ((strncmp(subdir, "/title", 6) != 0) || (strchrcount(dir, '/') < 6)))
             continue;
         dirptr[n_dirs++] = dir;
         if (n_dirs * sizeof(char**) >= 0x8000)
@@ -821,6 +823,14 @@ u32 BuildCiaStubTmd(u8* stub, TitleMetaData* tmd, u32 size_tmd)
     CiaInfo cia;
     
     
+    // check TMD sig type and size
+    u32 content_count = getbe16(tmd->content_count);
+    if ((memcmp(tmd->sig_type, sig_type, 4) != 0) ||
+        (size_tmd != sizeof(TitleMetaData) + (content_count * sizeof(TmdContentChunk)))) {
+        Debug("Provided TMD is corrupt");
+        return 1;
+    }
+    
     // set everything zero for a clean start
     memset(stub, 0, 0x4000);
     
@@ -834,7 +844,6 @@ u32 BuildCiaStubTmd(u8* stub, TitleMetaData* tmd, u32 size_tmd)
     
     // Extract info from TMD content list
     TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
-    u32 content_count = getbe16(tmd->content_count);
     u8* title_id = tmd->title_id;
     for (u32 i = 0; i < content_count; i++) {
         u32 index = getbe16(content_list[i].index);
@@ -1195,7 +1204,7 @@ u32 ConvertNcsdNcchToCia(u32 param)
         FileClose();
         
         // Fix the CIA file
-        Debug("Finalizing CIA file...", stub_size);
+        Debug("Finalizing CIA file...");
         if (FinalizeCiaFile(filename, false) != 0) {
             Debug("Failed!");
             continue;
@@ -1293,7 +1302,7 @@ u32 DecryptSdFilesDirect(u32 param)
         return 1; // movable.sed has to be present in NAND
     
     Debug("");
-    if (SdFolderSelector(basepath, movable_keyY) != 0)
+    if (SdFolderSelector(basepath, movable_keyY, false) != 0)
         return 1;
     if (!GetFileList(basepath, filelist, 0x100000, true, true, false)) {
         Debug("Nothing found in folder");
@@ -1336,6 +1345,132 @@ u32 DecryptSdFilesDirect(u32 param)
     }
     
     return (n_processed) ? 0 : 1;
+}
+
+u32 ConvertSdToCia(u32 param)
+{
+    (void) (param); // param is unused here
+    u8* stub = (u8*) 0x20316000;
+    TitleMetaData* tmd = (TitleMetaData*) 0x20320000;
+    TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
+    CryptBufferInfo info = {.keyslot = 0x34, .setKeyY = 0, .mode = AES_CNT_CTRNAND_MODE};
+    u8 movable_keyY[16] = { 0 };
+    char titlepath[256];
+    char* subpath; 
+    char* filename;
+    char ciapath[128];
+    const char* dest_dir = GetGameDir();
+    u32 fnlen = 0;
+    
+    if (!dest_dir) {
+        Debug("Game directory not found!");
+        Debug("(check readme for more info)");
+        return 1;
+    }
+    
+    if (SetupMovableKeyY(true, 0x34, movable_keyY) != 0)
+        return 1; // movable.sed has to be present in NAND
+    
+    Debug("");
+    if (SdFolderSelector(titlepath, movable_keyY, true) != 0)
+        return 1;
+    subpath = titlepath + 13 + 33 + 33; // length of ("/Nintendo 3DS" + "/<id0>" + "/<id1>")
+    filename = titlepath + strnlen(titlepath, 256);
+    fnlen = 256 - (filename - titlepath);
+    if (fnlen < 32) {
+        Debug("Bad title path");
+        return 1;
+    }
+    Debug("");
+    
+    // get title ID
+    u32 tid_low, tid_high;
+    if (sscanf(subpath, "/title/%08lX/%08lX", &tid_high, &tid_low) != 2) {
+        Debug("Could not extract title id from path");
+        return 1;
+    }
+    snprintf(ciapath, 128, "/%s/%08lX%08lX.cia", dest_dir, tid_high, tid_low);
+    Debug("Building CIA from ID %08lX%08lX", tid_high, tid_low);
+    
+    // TMD file
+    u32 tmd_num;
+    u32 tmd_size;
+    Debug("Fetching TMD...");
+    for (tmd_num = 0; tmd_num < 0x10; tmd_num++) {
+        snprintf(filename, fnlen, "/content/%08lx.tmd", tmd_num);
+        if (FileOpen(titlepath)) {
+            tmd_size = FileGetSize();
+            if (!DebugFileRead(tmd, (tmd_size > 0x4000) ? 0x4000 : tmd_size, 0)) {
+                FileClose();
+                return 1;
+            }
+            FileClose();
+            break;
+        }
+    }
+    if (tmd_num >= 0x10) {
+        Debug("TMD file: not found");
+        return 1;
+    }
+    info.buffer = (u8*) tmd;
+    info.size = tmd_size;
+    GetSdCtr(info.ctr, subpath);
+    CryptBuffer(&info);
+    
+    // CIA stub
+    u32 stub_size = BuildCiaStubTmd(stub, tmd, tmd_size);
+    if (stub_size == 0) {
+        Debug("Failed building the CIA stub");
+        return 1;
+    }
+    
+    // write CIA stub (first round)
+    Debug("Writing CIA stub (%lu byte)...", stub_size);
+    if (FileDumpData(ciapath, stub, stub_size) != stub_size) {
+        Debug("Failed writing the CIA stub");
+        return 1;
+    }
+    
+    // ticket injector
+    
+    // inject content file(s)
+    u32 next_offset = stub_size;
+    u32 content_count = getbe16(tmd->content_count);
+    for (u32 i = 0; i < content_count; i++) {
+        u32 id = getbe32(content_list[i].id);
+        u32 size = (u32) getbe64(content_list[i].size);
+        u32 offset = next_offset;
+        next_offset = offset + size;
+        snprintf(filename, fnlen, "/content/%08lx.app", id);
+        Debug("Injecting content id %08lX...", id);
+        if (!FileOpen(titlepath)) {
+            Debug("Content not found");
+            return 1;
+        }
+        if (FileInjectTo(ciapath, 0, offset, size, false, BUFFER_ADDRESS, BUFFER_MAX_SIZE) != size) {
+            Debug("Content has bad size");
+            FileClose();
+            return 1;
+        }
+        FileClose();
+        Debug("Decrypting content id %08lX...", id);
+        GetSdCtr(info.ctr, subpath);
+        if (CryptSdToSd(ciapath, offset, size, &info, false) != 0) {
+            Debug("Failed decrypting content");
+            return 1;
+        }
+    }
+    
+    // Finalize the CIA file
+    Debug("Finalizing CIA file...");
+    if (FinalizeCiaFile(ciapath, true) != 0) {
+        Debug("Failed!");
+        return 1;
+    }
+    Debug("");
+        
+    
+    return 0;
 }
 
 static u32 DumpCartToFile(u32 offset_cart, u32 offset_file, u32 size, u32 total, CryptBufferInfo* info, u8* out)

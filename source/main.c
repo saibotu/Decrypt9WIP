@@ -330,11 +330,13 @@ MenuInfo menu[] =
         }
     },
     {
-        "SD File Options", 3, // ID 21
+        "SD File Options", 5, // ID 21
         {
             { "SD Decryptor/Encryptor",       &CryptSdFiles,          0 },
             { "SD Decryptor (SysNAND dir)",   &DecryptSdFilesDirect,  0 },
-            { "SD Decryptor (EmuNAND dir)",   &DecryptSdFilesDirect,  N_EMUNAND }
+            { "SD Decryptor (EmuNAND dir)",   &DecryptSdFilesDirect,  N_EMUNAND },
+            { "Content to CIA (SysNAND dir)", &ConvertSdToCia,        0 },
+            { "Content to CIA (EmuNAND dir)", &ConvertSdToCia,        N_EMUNAND }
         }
     },
     {

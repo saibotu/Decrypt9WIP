@@ -1350,6 +1350,7 @@ u32 DecryptSdFilesDirect(u32 param)
 u32 ConvertSdToCia(u32 param)
 {
     (void) (param); // param is unused here
+    u8* buffer = BUFFER_ADDRESS;
     u8* stub = (u8*) 0x20316000;
     TitleMetaData* tmd = (TitleMetaData*) 0x20320000;
     TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
@@ -1423,15 +1424,45 @@ u32 ConvertSdToCia(u32 param)
         Debug("Failed building the CIA stub");
         return 1;
     }
+    CiaInfo cia;
+    GetCiaInfo(&cia, (CiaHeader*) stub);
     
-    // write CIA stub (first round)
+    // search for proper ticket
+    u32 t_offset, t_size;
+    bool tik_found = false;
+    PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
+    Ticket* ticket = (Ticket*) (stub + cia.offset_ticket);
+    Debug("Searching for proper ticket...");
+    if (SeekFileInNand(&t_offset, &t_size, "DBS        TICKET  DB ", ctrnand_info) == 0) {
+        for (u32 offset = 0; (offset < t_size) && !tik_found; offset += BUFFER_MAX_SIZE - (2 * NAND_SECTOR_SIZE)) {
+            const u8 sig_type[4] =  { 0x00, 0x01, 0x00, 0x04 };
+            u32 read_bytes = min(BUFFER_MAX_SIZE, (t_size - offset));
+            ShowProgress(offset, t_size);
+            if (DecryptNandToMem(buffer, t_offset + offset, read_bytes, ctrnand_info) != 0)
+                return 1;
+            for (u32 i = 0x140; (i < read_bytes - 0x210) && !tik_found; i++) {
+                if ((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) &&
+                    (memcmp(buffer + i - 0x140, sig_type, 4) == 0)) {
+                    // u32 consoleId = getle32(buffer + i + 0x98);
+                    u8* titleId = buffer + i + 0x9C;
+                    if (memcmp(titleId, ticket->title_id, 8) == 0) {
+                        Debug("Found ticket, injecting...");
+                        memcpy(ticket, buffer + i - 0x140, sizeof(Ticket));
+                        tik_found = true;
+                    }
+                }
+            }
+        }
+    }
+    if (!tik_found)
+        Debug("Ticket not found, skipped");
+    
+    // write CIA stub
     Debug("Writing CIA stub (%lu byte)...", stub_size);
     if (FileDumpData(ciapath, stub, stub_size) != stub_size) {
         Debug("Failed writing the CIA stub");
         return 1;
     }
-    
-    // ticket injector
     
     // inject content file(s)
     u32 next_offset = stub_size;
@@ -1447,7 +1478,7 @@ u32 ConvertSdToCia(u32 param)
             Debug("Content not found");
             return 1;
         }
-        if (FileInjectTo(ciapath, 0, offset, size, false, BUFFER_ADDRESS, BUFFER_MAX_SIZE) != size) {
+        if (FileInjectTo(ciapath, 0, offset, size, false, buffer, BUFFER_MAX_SIZE) != size) {
             Debug("Content has bad size");
             FileClose();
             return 1;
@@ -1461,14 +1492,14 @@ u32 ConvertSdToCia(u32 param)
         }
     }
     
-    // Finalize the CIA file
+    // finalize the CIA file
     Debug("Finalizing CIA file...");
     if (FinalizeCiaFile(ciapath, true) != 0) {
         Debug("Failed!");
         return 1;
     }
     Debug("");
-        
+    
     
     return 0;
 }

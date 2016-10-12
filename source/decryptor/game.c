@@ -1454,8 +1454,17 @@ u32 ConvertSdToCia(u32 param)
             }
         }
     }
-    if (!tik_found)
+    
+    if (!tik_found) {
         Debug("Ticket not found, skipped");
+    } else { // setup slot 0x11 for titlekey crypto
+        TitleKeyEntry titlekeyEntry;
+        memcpy(titlekeyEntry.titleId, ticket->title_id, 8);
+        memcpy(titlekeyEntry.titleKey, ticket->titlekey, 16);
+        titlekeyEntry.commonKeyIndex = ticket->commonkey_idx;
+        CryptTitlekey(&titlekeyEntry, false);
+        setup_aeskey(0x11, titlekeyEntry.titleKey);
+    }
     
     // write CIA stub
     Debug("Writing CIA stub (%lu byte)...", stub_size);
@@ -1473,7 +1482,7 @@ u32 ConvertSdToCia(u32 param)
         u32 offset = next_offset;
         next_offset = offset + size;
         snprintf(filename, fnlen, "/content/%08lx.app", id);
-        Debug("Injecting content id %08lX...", id);
+        Debug("Injecting content id %08lX (%lu kB)...", id, size / 1024);
         if (!FileOpen(titlepath)) {
             Debug("Content not found");
             return 1;
@@ -1498,8 +1507,25 @@ u32 ConvertSdToCia(u32 param)
         Debug("Failed!");
         return 1;
     }
-    Debug("");
     
+    next_offset = stub_size;
+    for (u32 i = 0; i < content_count; i++) {
+        if (content_list[i].type[1] & 0x1) { // redo titlekey crypto (because hashes & signatures)
+            u32 id = getbe32(content_list[i].id);
+            u32 size = (u32) getbe64(content_list[i].size);
+            u32 offset = next_offset;
+            next_offset = offset + size;
+            CryptBufferInfo info_tk = {.setKeyY = 0, .keyslot = 0x11, .mode = AES_CNT_TITLEKEY_ENCRYPT_MODE};
+            memset(info_tk.ctr, 0x00, 16);
+            memcpy(info_tk.ctr, content_list[i].index, 2);
+            Debug("Reencrypting content id %08lX...", id);
+            if (CryptSdToSd(ciapath, offset, size, &info_tk, false) != 0) {
+                Debug("Failed encrypting content");
+                return 1;
+            }
+        }
+    }
+    Debug("");
     
     return 0;
 }

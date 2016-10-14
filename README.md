@@ -40,7 +40,7 @@ Decrypt9 can be built to run from a number of entry points, descriptions are bel
 * __CakeHax MSET__: Copy Decrypt9.dat to the root of your SD card and Decrypt9.nds to anywhere on the SD card. You can then run it either via MSET and Decrypt9.nds. Build this via `make cakerop`.
 * __Gateway Browser Exploit__: Copy Launcher.dat to your SD card root and run this via http://go.gateway-3ds.com/ from your 3DS browser. Build this with `make gateway`. Please note: __this entrypoint is deprecated__. While it may still work at the present time with little to no problems, bugs will no more be fixed and it may be completely removed at a later time. Use CakeHax instead.
 
-If you are a developer and you are building this, you may also just run `make release` to build all files at once. If you are a user, all files are already included in the release archive.
+If you are a developer and you are building this, you may also just run `make release` to build all files at once. If you are a user, all files are already included in the release archive. When building this, you may also select to compile with one of four available fonts by appending FONT=ORIG/6X10/ACORN/GB to the make command line parameters.
 
 ## Working folders
 
@@ -75,13 +75,15 @@ The most important controls are displayed on screen, here is a list of all:
 * __X__ - Make a screenshot. Works in menu and on console output, after a feature finishes.
 * __X + LEFT/RIGHT__ - Batch screenshot all submenus / entries (only on menu)
 * __SELECT__ - Unmount SD card (only on menu).
-* __START (+ LEFT)__ - Reboot (START only) / Poweroff (with LEFT).
+* __HOME__ - Reboot the console.
+* __POWER__ - Poweroff the console.
+* __START (+ LEFT)__ - Reboot (START only) / Poweroff (with LEFT) the console.
 
-There are some features (NAND backup and restore, f.e.), that require the user to choose a file or a directory. In these cases, use the arrow keys to select and A / B to confirm and cancel.
+There are some features (NAND backup and restore, f.e.), that require the user to choose a file or a directory. In these cases, use the arrow keys (that includes LFET/RIGHT) to select and A / B to confirm and cancel.
 
 ## Decrypt9 features description
 
-Features in Decrypt9 are categorized into 5 main categories, see the descriptions of each below.
+Features in Decrypt9 are categorized into 7 main categories, see the descriptions of each below.
 
 ### XORpad Generator Options
 This category includes all features that generate XORpads. XORpads are not useful on their own, but they can be used (with additional tools) to decrypt things on your PC. Most, if not all, of the functionality provided by these features can now be achieved in Decrypt9 in a more comfortable way by newer dump/decrypt features, but these are still useful for following older tutorials and to work with other tools.
@@ -150,7 +152,7 @@ This is actually two categories in the main menu, but the functionality provided
   * __Health&Safety Inject(!)__: This is used to inject any app into your Health & Safety system app (as long as it is smaller than the original H&S app). Multiple safety clamps are in place, and this is a pretty safe feature. Users are still adviced to be cautious using this and only use eiter the original hs.app or inject apps created with the [Universal Inject Generator](https://gbatemp.net/threads/release-inject-any-app-into-health-safety-o3ds-n3ds-cfw-only.402236/). This feature will detect all injectable apps on the SD card and let the user choose which one to inject.
   * __GBA VC Save Dump__: Only available on SysNAND, use this to dump the GBA VC Savegame from your NAND. Other than the headered `AGBSAVE.bin` format, this allows usage in emulators. `slot0x24keyY.bin` is required for this to work. For info on how to use this and the below feature, see [here](https://gbatemp.net/threads/download-decrypt9-open-source-decryption-tools-wip.388831/page-196#post-6615811).
   * __GBA VC Save Inject__: Only available on SysNAND, use this to inject back a GBA VC Savegame (f.e. after manual editing) to your NAND. Same as above, `slot0x24keyY.bin` is required for this to work.
-  * __Update SeedDB__: Use this to create or update the ´seeddb.bin´ file on your SD card with the seeds currently installed in your Sys/EmuNAND. Only new seeds will get added to `seeddb.bin`, seeds already in the database stay untouched.
+  * __Update SeedDB__: Use this to create or update the `seeddb.bin` file on your SD card with the seeds currently installed in your Sys/EmuNAND. Only new seeds will get added to `seeddb.bin`, seeds already in the database stay untouched.
   * __NCCH FIRMs Dump__: Use this to dump NATIVE_FIRM, SAFE_MODE_FIRM, TWL_FIRM and AGB_FIRM from your NAND. For N3DS FIRMs, the ARM9 section will be decrypted as well. This feature is at the moment only useful for research.
   * __FIRM ARM9 Decryptor__: Use this to decrypt the ARM9 section of N3DS FIRMs. This feature is at the moment only useful for research.
 
@@ -172,6 +174,8 @@ This category includes all features that allow the decryption (and encryption) o
   * __SD Decryptor/Encryptor__: Use this to decrypt or encrypt 'SD files'. For this feature to work, you need to manually copy the file(s) you want to process. Copy them with their full folder structure (that's everything _after_ `/Nintendo 3DS/<id0>/<id1>/`) to the work / game folder. This feature should by now only be useful to encrypt content, decryption is much easier handled by the two features below.
   * __SD Decryptor (SysNAND dir)__: An improved version of the feature above. This allows you to select content from `/Nintendo 3DS/` (more specifically from the subfolder belonging to SysNAND) to be directly copied to your work / game folder and then decrypted from there.
   * __SD Decryptor (EmuNAND dir)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
+  * __Content to CIA (SysNAND dir)__: This feature allows you to directly convert content installed to the SD card to a CIA file. It handles content from the `/Nintendo 3DS/` subfolder belonging to SysNAND.
+  * __Content to CIA (EmuNAND dir)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
 
 ### Gamecart Dumper Options
 This category includes all features handling dumping of content from external cartridges. Cartridge dumps are also known as .3ds files.

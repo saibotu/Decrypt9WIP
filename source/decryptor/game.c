@@ -1707,6 +1707,7 @@ u32 DumpCtrGameCart(u32 param)
     u64 cart_size = 0;
     u64 data_size = 0;
     u64 dump_size = 0;
+    u32 card2_offset = (u32) -1;
     u32 result = 0;
 
     // read cartridge NCCH header
@@ -1727,6 +1728,9 @@ u32 DumpCtrGameCart(u32 param)
         Debug("Error reading cart NCSD header");
         return 1;
     }
+    
+    // check for card2 area offset
+    card2_offset = getbe32(((u8*) ncsd) + 0x200);
     
     // check NCSD partition table
     cart_size = (u64) ncsd->size * 0x200;
@@ -1856,10 +1860,27 @@ u32 DumpCtrGameCart(u32 param)
     }
     FileClose();
     
-    if ((param & CD_MAKECIA) && (result == 0)) {
-        Debug("Finalizing CIA file...");
-        if (FinalizeCiaFile(filename, false) != 0)
-            result = 1;
+    if (result == 0) { // finalizing steps
+        if (param & CD_MAKECIA) {
+            Debug("Finalizing CIA file...");
+            if (FinalizeCiaFile(filename, false) != 0)
+                result = 1;
+        } else if ((card2_offset != (u32) -1) && (card2_offset >= data_size) && (card2_offset < dump_size)) {
+            u8* buffer = BUFFER_ADDRESS;
+            memset(buffer, 0xFF, BUFFER_MAX_SIZE);
+            Debug("Wiping CARD2 area (%lluMB)...", (dump_size - card2_offset) / 0x100000);
+            if (FileOpen(filename)) {
+                for (u32 i = card2_offset; i < dump_size; i += BUFFER_MAX_SIZE) {
+                    if (!DebugFileWrite(buffer, min(BUFFER_MAX_SIZE, (dump_size - i)), i)) {
+                        result = 1;
+                        break;
+                    }
+                }
+                FileClose();
+            } else {
+                result = 1;
+            }
+        }
     }
     
     // verify decrypted ROM

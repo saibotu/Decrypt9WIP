@@ -79,7 +79,7 @@ The most important controls are displayed on screen, here is a list of all:
 * __POWER__ - Poweroff the console.
 * __START (+ LEFT)__ - Reboot (START only) / Poweroff (with LEFT) the console.
 
-There are some features (NAND backup and restore, f.e.), that require the user to choose a file or a directory. In these cases, use the arrow keys (that includes LFET/RIGHT) to select and A / B to confirm and cancel.
+There are some features (NAND backup and restore, f.e.), that require the user to choose a file or a directory. In these cases, use the arrow keys (that includes LFET/RIGHT) to select and A / B to confirm and cancel. Also, most file write operations (NAND writes excluded) can be cancelled by holding B.
 
 ## Decrypt9 features description
 

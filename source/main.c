@@ -416,7 +416,7 @@ u32 InitializeD9()
     Debug("");
     Debug("Initialization: %s", (errorlevel == 0) ? "success!" : (errorlevel == 1) ? "partially failed" : "failed!");
     
-    if (((HID_STATE & BUTTON_L1) && (HID_STATE & BUTTON_R1)) || (errorlevel > 1)) {
+    if (CheckButton(BUTTON_L1|BUTTON_R1) || (errorlevel > 1)) {
         DebugColor(COLOR_ASK, "(A to %s)", (errorlevel > 1) ? "exit" : "continue");
         while (!(InputWait() & BUTTON_A));
     }

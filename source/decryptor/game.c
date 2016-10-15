@@ -1730,8 +1730,8 @@ u32 DumpCtrGameCart(u32 param)
     }
     
     // check for card2 area offset
-    if (getbe32(((u8*) ncsd) + 0x200) != 0xFFFFFFFF)
-        card2_offset = (u64) getbe32(((u8*) ncsd) + 0x200) * 0x200;
+    if (getle32(((u8*) ncsd) + 0x200) != 0xFFFFFFFF)
+        card2_offset = (u64) getle32(((u8*) ncsd) + 0x200) * 0x200;
     
     // check NCSD partition table
     cart_size = (u64) ncsd->size * 0x200;

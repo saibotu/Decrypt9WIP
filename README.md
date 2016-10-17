@@ -3,7 +3,7 @@ _Multipurpose content dumper and decryptor for the Nintendo 3DS_
 
 ## Decrypt9 WIP (work-in-progress) by d0k3 
 
-This is a work in progress fork of Archshifts original Decrypt9, including bleeding edge new features. Note that the names of the exectuable files for this are Decrypt9WIP.* instead of Decrypt9.*. New features introduced in this will eventually get pulled into [Archshifts repo](https://github.com/archshift/Decrypt9).
+This is a work in progress fork of Archshifts original Decrypt9, including bleeding edge new features. Note that the names of the executable files for this are Decrypt9WIP.* instead of Decrypt9.*. New features introduced in this will eventually get pulled into [Archshifts repo](https://github.com/archshift/Decrypt9).
 
 You may discuss this work in progress version, help testing, participate in the development and on [GBAtemp](https://gbatemp.net/threads/download-decrypt9-wip-3dsx-launcher-dat.388831/).
 

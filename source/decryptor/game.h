@@ -115,9 +115,12 @@ typedef struct {
 	u8 permit_mask[4];
 	u8 title_export;
 	u8 commonkey_idx;
-	u8 unknown_buf[0x30];
+    u8 reserved1[0x2A];
+    u8 eshop_id[4];
+    u8 reserved2;
+    u8 audit;
 	u8 content_permissions[0x40];
-	u8 reserved1[2];
+	u8 reserved3[2];
 	u8 timelimits[0x40];
     u8 content_index[0xAC];
 } __attribute__((packed)) Ticket;

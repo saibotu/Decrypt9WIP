@@ -898,7 +898,7 @@ u32 BuildCiaStubTmd(u8* stub, TitleMetaData* tmd, u32 size_tmd)
     memset(ticket->titlekey, 0xFF, 16);
     memcpy(ticket->title_id, title_id, 8);
     ticket->commonkey_idx = 0x01;
-    ticket->unknown_buf[0x2F] = 0x01; // whatever
+    ticket->audit = 0x01; // whatever
     memcpy(ticket->content_index, ticket_cnt_index, sizeof(ticket_cnt_index));
     
     // TMD
@@ -1448,6 +1448,8 @@ u32 ConvertSdToCia(u32 param)
                     if (memcmp(titleId, ticket->title_id, 8) == 0) {
                         Debug("Found ticket, injecting...");
                         memcpy(ticket, buffer + i - 0x140, sizeof(Ticket));
+                        memset(ticket->console_id, 0, 4); // zero out console id
+                        memset(ticket->eshop_id, 0, 4); // zero out eshop id
                         tik_found = true;
                     }
                 }

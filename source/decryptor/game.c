@@ -1732,7 +1732,9 @@ u32 DumpCtrGameCart(u32 param)
     }
     
     // check for card2 area offset
-    if (getle32(((u8*) ncsd) + 0x200) != 0xFFFFFFFF)
+    // see: https://www.3dbrew.org/wiki/NCSD#Partition_Flags
+    // see: https://www.3dbrew.org/wiki/NCSD#Card_Info_Header
+    if ((ncsd->partition_flags[5] == 0x2) && (getle32(((u8*) ncsd) + 0x200) != 0xFFFFFFFF))
         card2_offset = (u64) getle32(((u8*) ncsd) + 0x200) * 0x200;
     
     // check NCSD partition table
@@ -1781,6 +1783,9 @@ u32 DumpCtrGameCart(u32 param)
             return 1;
         }
     }
+    
+    if ((param & CD_TRIM) && card2_offset)
+        Debug("Warning: Trimming CARD2 game removes save area");
     
     if (!DebugCheckFreeSpace((size_t) dump_size))
         return 1;

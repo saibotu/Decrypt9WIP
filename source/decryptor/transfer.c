@@ -86,7 +86,7 @@ u32 NandTransfer(u32 param) {
     Debug("");
     Debug("Step #0: Optional NAND backup");
     Debug("Press <B> to skip and continue without backup");
-    if (DumpNand(NB_MINSIZE) == 1) {
+    if (DumpNand(param | NB_MINSIZE) == 1) {
         DebugColor(COLOR_ASK, "Failed, <A> to continue, <B> to stop");
         if (!(InputWait() & BUTTON_A))
             return 1;

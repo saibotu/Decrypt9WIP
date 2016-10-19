@@ -211,5 +211,6 @@ u32 ConvertNcsdNcchToCia(u32 param);
 u32 CryptSdFiles(u32 param);
 u32 DecryptSdFilesDirect(u32 param);
 u32 ConvertSdToCia(u32 param);
+u32 DecryptSdToCxi(u32 param);
 u32 DumpGameCart(u32 param);
 u32 DumpPrivateHeader(u32 param);

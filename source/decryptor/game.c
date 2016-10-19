@@ -1532,6 +1532,108 @@ u32 ConvertSdToCia(u32 param)
     return 0;
 }
 
+u32 DecryptSdToCxi(u32 param)
+{
+    (void) (param); // param is unused here
+    u8* buffer = BUFFER_ADDRESS;
+    TitleMetaData* tmd = (TitleMetaData*) 0x20320000;
+    TmdContentChunk* content_list = (TmdContentChunk*) (tmd + 1);
+    CryptBufferInfo info = {.keyslot = 0x34, .setKeyY = 0, .mode = AES_CNT_CTRNAND_MODE};
+    u8 movable_keyY[16] = { 0 };
+    char titlepath[256];
+    char* subpath; 
+    char* filename;
+    char cxipath[128];
+    const char* dest_dir = GetGameDir();
+    u32 fnlen = 0;
+    
+    if (!dest_dir) {
+        Debug("Game directory not found!");
+        Debug("(check readme for more info)");
+        return 1;
+    }
+    
+    if (SetupMovableKeyY(true, 0x34, movable_keyY) != 0)
+        return 1; // movable.sed has to be present in NAND
+    
+    Debug("");
+    if (SdFolderSelector(titlepath, movable_keyY, true) != 0)
+        return 1;
+    subpath = titlepath + 13 + 33 + 33; // length of ("/Nintendo 3DS" + "/<id0>" + "/<id1>")
+    filename = titlepath + strnlen(titlepath, 256);
+    fnlen = 256 - (filename - titlepath);
+    if (fnlen < 32) {
+        Debug("Bad title path");
+        return 1;
+    }
+    Debug("");
+    
+    // get title ID
+    u32 tid_low, tid_high;
+    if (sscanf(subpath, "/title/%08lX/%08lX", &tid_high, &tid_low) != 2) {
+        Debug("Could not extract title id from path");
+        return 1;
+    }
+    snprintf(cxipath, 128, "/%s/%08lX%08lX.cxi", dest_dir, tid_high, tid_low);
+    Debug("Decrypting CXI from ID %08lX%08lX", tid_high, tid_low);
+    
+    // TMD file
+    u32 tmd_num;
+    u32 tmd_size;
+    for (tmd_num = 0; tmd_num < 0x10; tmd_num++) {
+        snprintf(filename, fnlen, "/content/%08lx.tmd", tmd_num);
+        if (FileOpen(titlepath)) {
+            tmd_size = FileGetSize();
+            if (!DebugFileRead(tmd, (tmd_size > 0x4000) ? 0x4000 : tmd_size, 0)) {
+                FileClose();
+                return 1;
+            }
+            FileClose();
+            break;
+        }
+    }
+    if (tmd_num >= 0x10) {
+        Debug("TMD file: not found");
+        return 1;
+    }
+    info.buffer = (u8*) tmd;
+    info.size = tmd_size;
+    GetSdCtr(info.ctr, subpath);
+    CryptBuffer(&info);
+    
+    // copy first content
+    if (!getbe16(tmd->content_count)) {
+        Debug("Content list is empty"); // won't happen
+        return 1;
+    }
+    u32 id = getbe32(content_list[0].id);
+    u32 size = (u32) getbe64(content_list[0].size);
+    snprintf(filename, fnlen, "/content/%08lx.app", id);
+    Debug("Copying content id %08lX (%lu kB)...", id, size / 1024);
+    if (!FileOpen(titlepath)) {
+        Debug("Content not found");
+        return 1;
+    }
+    if (FileCopyTo(cxipath, buffer, BUFFER_MAX_SIZE) != size) {
+        Debug("Content has bad size");
+        FileClose();
+        return 1;
+    }
+    FileClose();
+    Debug("Decrypting (SD) content id %08lX...", id);
+    GetSdCtr(info.ctr, subpath);
+    if (CryptSdToSd(cxipath, 0, size, &info, false) != 0) {
+        Debug("Failed decrypting content");
+        return 1;
+    }
+    Debug("Decrypting (NCCH) content id %08lX...", id);
+    CryptNcch(cxipath, 0, size, 0, NULL);
+    
+    Debug("");
+    
+    return 0;
+}
+
 static u32 DumpCartToFile(u32 offset_cart, u32 offset_file, u32 size, u32 total, CryptBufferInfo* info, u8* out)
 {
     // this assumes cart dumping initialized & file open for writing

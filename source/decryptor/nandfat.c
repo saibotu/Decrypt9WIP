@@ -201,29 +201,39 @@ u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* s
     if (region > 6)
         return 1;
     tid_low = title_info->tid_low[(region >= 3) ? region - 1 : region];
-    if (tid_low == 0) {
-        Debug("%s not available for region", title_info->name);
-        return 1;
+    
+    // try the correct one first, others after
+    Debug("Searching title \"%s\"...", title_info->name);
+    for (int r = -1; r < 6; r++) {
+        if (r >= 0)
+            tid_low = title_info->tid_low[r];
+        if ((tid_low == 0) || ((u32) r == ((region >= 3) ? region - 1 : region)))
+            continue;
+        Debug("Trying title ID %08lX%08lX (region %u)", tid_high, tid_low, (r < 0) ? region : (r < 3) ? r : r + 1);
+        Debug("Method 1: Search in title.db...");
+        if (SeekTitleInNandDb(tid_high, tid_low, &tmd_id) == 0) {
+            char path[64];
+            sprintf(path, "TITLE      %08lX   %08lX   CONTENT    %08lXTMD", tid_high, tid_low, tmd_id);
+            if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) != 0)
+                tmd_id = (u32) -1;
+        }
+        if (tmd_id == (u32) -1) {
+            Debug("Method 2: Search in file system...");
+            char path[64];
+            sprintf(path, "TITLE      %08lX   %08lX   CONTENT    ????????TMD", tid_high, tid_low);
+            if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) != 0) {
+                tid_low = 0;
+                continue;
+            }
+        }
+        break;
     }
     
-    Debug("Searching title \"%s\"...", title_info->name);
-    Debug("Method 1: Search in title.db...");
-    if (SeekTitleInNandDb(tid_high, tid_low, &tmd_id) == 0) {
-        char path[64];
-        sprintf(path, "TITLE      %08lX   %08lX   CONTENT    %08lXTMD", tid_high, tid_low, tmd_id);
-        if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) != 0)
-            tmd_id = (u32) -1;
+    if (!tid_low) {
+        Debug("Failed!");
+        return 1;
     }
-    if (tmd_id == (u32) -1) {
-        Debug("Method 2: Search in file system...");
-        char path[64];
-        sprintf(path, "TITLE      %08lX   %08lX   CONTENT    ????????TMD", tid_high, tid_low);
-        if (SeekFileInNand(offset_tmd, size_tmd, path, ctrnand_info) != 0) {
-            Debug("Failed!");
-            return 1;
-        }
-    }
-    Debug("Found title %08X%08X", title_info->tid_high, tid_low);
+    Debug("Found title ID %08X%08X", tid_high, tid_low);
     
     Debug("TMD0 found at %08X, size %ub", *offset_tmd, *size_tmd);
     if ((*size_tmd < 0xC4 + (0x40 * 0x24)) || (*size_tmd > 0x4000)) {
@@ -252,7 +262,7 @@ u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* s
             Debug("APP%i was skipped", i);
             continue;
         }
-        sprintf(path, "TITLE      %08X   %08X   CONTENT    %08XAPP", (unsigned int) title_info->tid_high, (unsigned int) tid_low, (unsigned int) cnt_id);
+        sprintf(path, "TITLE      %08lX   %08lX   CONTENT    %08lXAPP", tid_high, tid_low, cnt_id);
         if (SeekFileInNand(offset_app + i, size_app + i, path, ctrnand_info) != 0) {
             Debug("APP%i not found or fragmented!", i);
             return 1;

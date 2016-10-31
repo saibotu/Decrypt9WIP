@@ -1451,8 +1451,6 @@ u32 ConvertSdToCia(u32 param)
                         if (memcmp(titleId, ticket->title_id, 8) == 0) {
                             Debug("Found ticket, injecting...");
                             memcpy(ticket, buffer + i - 0x140, sizeof(Ticket));
-                            memset(ticket->console_id, 0, 4); // zero out console id
-                            memset(ticket->eshop_id, 0, 4); // zero out eshop id
                             tik_found = true;
                         }
                     }
@@ -1469,6 +1467,14 @@ u32 ConvertSdToCia(u32 param)
             titlekeyEntry.commonKeyIndex = ticket->commonkey_idx;
             CryptTitlekey(&titlekeyEntry, false);
             setup_aeskey(0x11, titlekeyEntry.titleKey);
+        }
+        
+        // wipe console unique info
+        if (getbe32(ticket->console_id) || getbe32(ticket->eshop_id)) {
+            Debug("Console unique info found, wiping...");
+            memset(ticket->console_id, 0, 4); // zero out console id
+            memset(ticket->eshop_id, 0, 4); // zero out eshop id
+            memset(ticket->ticket_id, 0, 8); // zero out ticket id
         }
         
         // write CIA stub

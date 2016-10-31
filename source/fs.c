@@ -155,6 +155,16 @@ size_t FileInjectTo(const char* dest, u32 offset_in, u32 offset_out, u32 size, b
             result = 0;
             break;
         }
+        if (CheckButton(BUTTON_B)) {
+            DebugColor(COLOR_ASK, "Press <A> to cancel operation");
+            while (CheckButton(BUTTON_B)); // make sure <B> is no more pressed
+            if (InputWait() & BUTTON_A) {
+                DebugColor(COLOR_ASK, "(cancelled by user)");
+                return false;
+            } else {
+                Debug("Continuing operation...");
+            }
+        }
     }
     ShowProgress(0, 0);
     f_close(&dfile);

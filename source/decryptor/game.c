@@ -1479,32 +1479,35 @@ u32 ConvertSdToCia(u32 param)
         }
         
         // inject content file(s)
+        u32 c = 0;
         u32 next_offset = stub_size;
         u32 content_count = getbe16(tmd->content_count);
-        for (u32 i = 0; i < content_count; i++) {
-            u32 id = getbe32(content_list[i].id);
-            u32 size = (u32) getbe64(content_list[i].size);
+        for (c = 0; c < content_count; c++) {
+            u32 id = getbe32(content_list[c].id);
+            u32 size = (u32) getbe64(content_list[c].size);
             u32 offset = next_offset;
             next_offset = offset + size;
             snprintf(filename, 16, "/%08lx.app", id);
             Debug("Injecting content id %08lX (%lu kB)...", id, size / 1024);
             if (!FileOpen(titlepath)) {
                 Debug("Content not found");
-                continue;
+                break;
             }
             if (FileInjectTo(ciapath, 0, offset, size, false, buffer, BUFFER_MAX_SIZE) != size) {
                 Debug("Content has bad size");
                 FileClose();
-                continue;
+                break;
             }
             FileClose();
             Debug("Decrypting content id %08lX...", id);
             GetSdCtr(info.ctr, subpath);
             if (CryptSdToSd(ciapath, offset, size, &info, false) != 0) {
                 Debug("Failed decrypting content");
-                continue;
+                break;
             }
         }
+        if (c < content_count)
+            continue; // error, skip the remaing steps
         
         // finalize the CIA file
         Debug("Finalizing CIA file...");
@@ -1514,15 +1517,15 @@ u32 ConvertSdToCia(u32 param)
         }
         
         next_offset = stub_size;
-        for (u32 i = 0; i < content_count; i++) {
-            if (content_list[i].type[1] & 0x1) { // redo titlekey crypto (because hashes & signatures)
-                u32 id = getbe32(content_list[i].id);
-                u32 size = (u32) getbe64(content_list[i].size);
+        for (c = 0; c < content_count; c++) {
+            if (content_list[c].type[1] & 0x1) { // redo titlekey crypto (because hashes & signatures)
+                u32 id = getbe32(content_list[c].id);
+                u32 size = (u32) getbe64(content_list[c].size);
                 u32 offset = next_offset;
                 next_offset = offset + size;
                 CryptBufferInfo info_tk = {.setKeyY = 0, .keyslot = 0x11, .mode = AES_CNT_TITLEKEY_ENCRYPT_MODE};
                 memset(info_tk.ctr, 0x00, 16);
-                memcpy(info_tk.ctr, content_list[i].index, 2);
+                memcpy(info_tk.ctr, content_list[c].index, 2);
                 Debug("Reencrypting content id %08lX...", id);
                 if (CryptSdToSd(ciapath, offset, size, &info_tk, false) != 0) {
                     Debug("Failed encrypting content");
@@ -1530,13 +1533,15 @@ u32 ConvertSdToCia(u32 param)
                 }
             }
         }
+        if (c < content_count)
+            continue; // error, skip the remaing steps
         
         n_failed--;
         n_processed++;
         Debug("");
     }
     
-    if (n_processed) {
+    if (n_processed || n_failed) {
         Debug("%ux generated / %ux failed", n_processed, n_failed);
     } else {
         Debug("No usable content found");
@@ -1617,7 +1622,7 @@ u32 DecryptSdToCxi(u32 param)
         // check for empty content list
         if (!getbe16(tmd->content_count)) {
             Debug("Content list is empty"); // won't happen
-            return 1;
+            continue;
         }
         
         // copy first content
@@ -1627,12 +1632,12 @@ u32 DecryptSdToCxi(u32 param)
         Debug("Copying content id %08lX (%lu kB)...", id, size / 1024);
         if (!FileOpen(titlepath)) {
             Debug("Content not found");
-            return 1;
+            continue;
         }
         if (FileCopyTo(cxipath, buffer, BUFFER_MAX_SIZE) != size) {
             Debug("Content has bad size");
             FileClose();
-            return 1;
+            continue;
         }
         FileClose();
         
@@ -1641,19 +1646,20 @@ u32 DecryptSdToCxi(u32 param)
         GetSdCtr(info.ctr, subpath);
         if (CryptSdToSd(cxipath, 0, size, &info, false) != 0) {
             Debug("Failed decrypting content");
-            return 1;
+            continue;
         }
         
         // NCCH decryption
         Debug("Decrypting (NCCH) content id %08lX...", id);
-        CryptNcch(cxipath, 0, size, 0, NULL);
+        if (CryptNcch(cxipath, 0, size, 0, NULL) == 1)
+            continue;
         
         n_failed--;
         n_processed++;
         Debug("");
     }
     
-    if (n_processed) {
+    if (n_processed || n_failed) {
         Debug("%ux generated / %ux failed", n_processed, n_failed);
     } else {
         Debug("No usable content found");

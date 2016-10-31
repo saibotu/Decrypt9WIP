@@ -209,7 +209,7 @@ u32 DebugSeekTitleInNand(u32* offset_tmd, u32* size_tmd, u32* offset_app, u32* s
             tid_low = title_info->tid_low[r];
         if ((tid_low == 0) || ((u32) r == ((region >= 3) ? region - 1 : region)))
             continue;
-        Debug("Trying title ID %08lX%08lX (region %u)", tid_high, tid_low, (r < 0) ? region : (r < 3) ? r : r + 1);
+        Debug("Trying title ID %08lX%08lX (region %u)", tid_high, tid_low, (r < 0) ? region : (u32) ((r < 3) ? r : r + 1));
         Debug("Method 1: Search in title.db...");
         if (SeekTitleInNandDb(tid_high, tid_low, &tmd_id) == 0) {
             char path[64];

@@ -611,22 +611,21 @@ u32 CryptCia(const char* filename, u8* ncch_crypt, bool cia_encrypt, bool cxi_on
             }
             n_processed++;
         }
-        if (!untouched && (result == 0)) {
-            // recalculate content info hashes
-            Debug("Recalculating TMD hashes...");
-            for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
-                TmdContentInfo* cntinfo = tmd->contentinfo + i;
-                u32 k = getbe16(cntinfo->cmd_count);
-                sha_quick(cntinfo->hash, content_list + kc, k * sizeof(TmdContentChunk), SHA256_MODE);
-                kc += k;
-            }
-            sha_quick(tmd->contentinfo_hash, (u8*)tmd->contentinfo, 64 * sizeof(TmdContentInfo), SHA256_MODE);
-        }
     }
     
     if (untouched) {
         Debug((cia_encrypt) ? "CIA is already encrypted" : "CIA is not encrypted");
     } else if (n_processed > 0) {
+        // recalculate content info hashes
+        Debug("Recalculating TMD hashes...");
+        for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
+            TmdContentInfo* cntinfo = tmd->contentinfo + i;
+            u32 k = getbe16(cntinfo->cmd_count);
+            sha_quick(cntinfo->hash, content_list + kc, k * sizeof(TmdContentChunk), SHA256_MODE);
+            kc += k;
+        }
+        sha_quick(tmd->contentinfo_hash, (u8*)tmd->contentinfo, 64 * sizeof(TmdContentInfo), SHA256_MODE);
+        // write ticket / tmd
         if (!FileOpen(filename)) // already checked this file
             return 1;
         if (!DebugFileWrite(buffer, cia.size_ticktmd, cia.offset_ticktmd))

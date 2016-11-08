@@ -12,6 +12,9 @@ void DeinitFS();
 const char* GetWorkDir();
 const char* GetGameDir();
 
+/** Checks for B button, asks for confirmation **/
+bool DebugCheckCancel(void);
+
 /** Checks if there is enough space free on the SD card **/
 bool DebugCheckFreeSpace(size_t required);
 

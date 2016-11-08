@@ -339,6 +339,7 @@ u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encryp
             FileClose();
             if (!found) {
                 Debug("Seed not found in seeddb.bin!");
+                Debug("Try updating your seeddb.bin");
                 return 1;
             }
         } else {

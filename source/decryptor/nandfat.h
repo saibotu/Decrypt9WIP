@@ -52,4 +52,5 @@ u32 DumpHealthAndSafety(u32 param);
 u32 InjectHealthAndSafety(u32 param);
 u32 DumpNcchFirms(u32 param);
 u32 AutoFixCtrnand(u32 param);
+u32 DumpCitraConfig(u32 param);
 u32 UpdateSeedDb(u32 param);

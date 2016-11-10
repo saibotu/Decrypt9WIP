@@ -284,23 +284,25 @@ MenuInfo menu[] =
         }
     },
     {
-        "Miscellaneous... (SysNAND)", 7, // ID 16
+        "Miscellaneous... (SysNAND)", 8, // ID 16
         {
             { "Health&Safety Dump",           &DumpHealthAndSafety,   0 },
             { "Health&Safety Inject",         &InjectHealthAndSafety, N_NANDWRITE },
             { "GBA VC Save Dump",             &DumpGbaVcSave,         0 },
             { "GBA VC Save Inject",           &InjectGbaVcSave,       N_NANDWRITE },
             { "Update SeedDB",                &UpdateSeedDb,          0 },
+            { "Dump Config (for Citra)",      &DumpCitraConfig,       0 },
             { "NCCH FIRMs Dump",              &DumpNcchFirms,         0 },
             { "FIRM ARM9 Decryptor",          &DecryptFirmArm9File,   0 }
         }
     },
     {
-        "Miscellaneous... (EmuNAND)", 5, // ID 17
+        "Miscellaneous... (EmuNAND)", 6, // ID 17
         {            
             { "Health&Safety Dump",           &DumpHealthAndSafety,   N_EMUNAND },
             { "Health&Safety Inject",         &InjectHealthAndSafety, N_NANDWRITE | N_EMUNAND },
             { "Update SeedDB",                &UpdateSeedDb,          N_EMUNAND },
+            { "Dump Config (for Citra)",      &DumpCitraConfig,       N_EMUNAND },
             { "NCCH FIRMs Dump",              &DumpNcchFirms,         N_EMUNAND },
             { "FIRM ARM9 Decryptor",          &DecryptFirmArm9File,   0 }
         }

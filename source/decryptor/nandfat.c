@@ -795,6 +795,52 @@ u32 AutoFixCtrnand(u32 param)
     return 0;
 }
 
+u32 DumpCitraConfig(u32 param)
+{
+    (void) (param); // param is unused here
+    
+    static const u32 config_offset[2] = { 0x6000, 0x25000 };
+    static const u32 config_size = 0x8000;
+    static const u8 magic[] = { 0x41, 0x00, 0xE4, 0x41, 0x00, 0x00, 0x00, 0x00, 0x39, 0x00 };
+    
+    NandFileInfo* f_info = GetNandFileInfo(F_CONFIGSAVE);
+    PartitionInfo* p_info = GetPartitionInfo(f_info->partition_id);
+    u8* buffer = BUFFER_ADDRESS;
+    
+    u32 p_active = 0;
+    u32 offset;
+    u32 size;
+    
+    // search for config save
+    if (DebugSeekFileInNand(&offset, &size, f_info->name_l, f_info->path, p_info) != 0)
+        return 1;
+    
+    // get active partition from DISA
+    if (DecryptNandToMem(buffer, offset, 0x200, p_info) != 0)
+        return 1;
+    p_active = (getle32(buffer + 0x168)) ? 1 : 0;
+    
+    Debug("");
+    for (u32 i = 0; i < 2; i++) {
+        char filename[64];
+        u32 p = (i + p_active) % 2; // offset / partition to try;
+        Debug("Trying offset 0x%06X, partition %u...", config_offset[p], p);
+        if (DecryptNandToMem(buffer, offset + config_offset[p], 0x200, p_info) != 0)
+            return 1;
+        if (memcmp(buffer, magic, sizeof(magic)) != 0) {
+            Debug("Magic not found!");
+            continue;
+        }
+        if (OutputFileNameSelector(filename, "config", NULL) != 0)
+            return 1;
+        if (DecryptNandToFile(filename, offset + config_offset[p], config_size, p_info, NULL) != 0)
+            return 1;
+        return 0;
+    }
+    
+    return 1; // failed if arriving here
+}
+
 u32 UpdateSeedDb(u32 param)
 {
     (void) (param); // param is unused here

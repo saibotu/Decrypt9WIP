@@ -320,33 +320,37 @@ u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encryp
     
     // check / setup seed crypto
     if (usesSeedCrypto) {
-        if (FileOpen("seeddb.bin")) {
+        u8 seed[16];
+        u32 found = 0;
+        if (FindSeedInSeedSave(seed, seedId) == 0) { // try loading from NAND
+            Debug("Loading seed from NAND: ok");
+            found = 1;
+        } else if (FileOpen("seeddb.bin")) { // try loading from seeddb.bin
             SeedInfoEntry* entry = (SeedInfoEntry*) buffer;
-            u32 found = 0;
             for (u32 i = 0x10;; i += 0x20) {
                 if (FileRead(entry, 0x20, i) != 0x20)
                     break;
                 if (entry->titleId == seedId) {
-                    u8 keydata[32];
-                    memcpy(keydata, ncch->signature, 16);
-                    memcpy(keydata + 16, entry->external_seed, 16);
-                    u8 sha256sum[32];
-                    sha_quick(sha256sum, keydata, 32, SHA256_MODE);
-                    memcpy(seedKeyY, sha256sum, 16);
+                    memcpy(seed, entry->external_seed, 16);
+                    Debug("Loading seed from seeddb.bin: ok");
                     found = 1;
+                    break;
                 }
             }
             FileClose();
-            if (!found) {
-                Debug("Seed not found in seeddb.bin!");
-                Debug("Try updating your seeddb.bin");
-                return 1;
-            }
+        }
+        if (found) {
+            u8 keydata[32];
+            memcpy(keydata, ncch->signature, 16);
+            memcpy(keydata + 16, seed, 16);
+            u8 sha256sum[32];
+            sha_quick(sha256sum, keydata, 32, SHA256_MODE);
+            memcpy(seedKeyY, sha256sum, 16);
         } else {
-            Debug("Need seeddb.bin for seed crypto!");
+            Debug("Seed not found in seeddb.bin or NAND!");
+            Debug("Try updating your seeddb.bin");
             return 1;
         }
-        Debug("Loading seed from seeddb.bin: ok");
     }
     
     // basic setup of CryptBufferInfo structs

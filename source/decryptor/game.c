@@ -99,6 +99,19 @@ u32 SdFolderSelector(char* path, u8* keyY, bool title_select)
     if (n_dirs == 0) {
         Debug("No valid SD data found");
         return 1;
+    } else { // sort the dir list
+        bool swapped;
+        do {
+            swapped = false;
+            for (u32 i = 0; i < n_dirs - 1; i++) {
+                if (strncmp(dirptr[i], dirptr[i+1], 256) > 0) {
+                    char* swap = dirptr[i];
+                    dirptr[i] = dirptr[i+1];
+                    dirptr[i+1] = swap;
+                    swapped = true;
+                }
+            }
+        } while (swapped);
     }
     
     // let the user choose a directory

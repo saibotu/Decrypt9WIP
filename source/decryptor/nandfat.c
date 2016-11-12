@@ -844,7 +844,8 @@ u32 DumpCitraConfig(u32 param)
 u32 UpdateSeedDb(u32 param)
 {
     (void) (param); // param is unused here
-    PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
+    NandFileInfo* f_info = GetNandFileInfo(F_SEEDSAVE);
+    PartitionInfo* p_info = GetPartitionInfo(f_info->partition_id);
     u8* buffer = BUFFER_ADDRESS;
     SeedInfo *seedinfo = (SeedInfo*) 0x20400000;
     
@@ -853,39 +854,27 @@ u32 UpdateSeedDb(u32 param)
     u32 size;
     
     // load full seedsave to memory
-    Debug("Searching for seedsave...");
-    if (SeekFileInNand(&offset, &size, "DATA       ???????????SYSDATA    0001000F   00000000   ", ctrnand_info) != 0) {
-        Debug("Failed!");
+    if (DebugSeekFileInNand(&offset, &size, f_info->name_l, f_info->path, p_info) != 0)
         return 1;
-    }
-    Debug("Found at %08X, size %ukB", offset, size / 1024);
     if (size != 0xAC000) {
-        Debug("Expected %ukB, failed!", 0xAC000);
+        Debug("Expected %ukB, failed!", 0xAC000 / 1024);
         return 1;
     }
-    if (DecryptNandToMem(buffer, offset, size, ctrnand_info) != 0)
+    if (DecryptNandToMem(buffer, offset, size, p_info) != 0)
         return 1;
     
     // load / create seeddb.bin
-    if (DebugFileOpen("seeddb.bin")) {
-        if (!DebugFileRead(seedinfo, 16, 0)) {
-            FileClose();
+    u32 size_seeddb;
+    if ((size_seeddb = FileGetData("seeddb.bin", seedinfo, sizeof(SeedInfo), 0))) {
+        if ((seedinfo->n_entries > MAX_ENTRIES) || (size_seeddb != 16 + seedinfo->n_entries * sizeof(SeedInfoEntry))) {
+            Debug("seeddb.bin found, but seems corrupt");
             return 1;
-        }
-        if (seedinfo->n_entries > MAX_ENTRIES) {
-            Debug("seeddb.bin seems to be corrupt!");
-            FileClose();
-            return 1;
-        }
-        if (!DebugFileRead(seedinfo->entries, seedinfo->n_entries * sizeof(SeedInfoEntry), 16)) {
-            FileClose();
-            return 1;
+        } else {
+            Debug("Using existing seeddb.bin");
         }
     } else {
-        if (!DebugFileCreate("seeddb.bin", true))
-            return 1;
+        Debug("Creating new seeddb.bin");
         memset(seedinfo, 0x00, 16);
-        DebugFileWrite(seedinfo, 16, 0);
     }
     
     // search and extract seeds
@@ -928,16 +917,14 @@ u32 UpdateSeedDb(u32 param)
     
     if (nNewSeeds == 0) {
         Debug("Found no new seeds, %i total", seedinfo->n_entries);
-        FileClose();
         return 0;
     }
     
     Debug("Found %i new seeds, %i total", nNewSeeds, seedinfo->n_entries);
-    if (!DebugFileWrite(seedinfo, 16 + seedinfo->n_entries * sizeof(SeedInfoEntry), 0)) {
-        FileClose();
+    if (!FileDumpData("seeddb.bin", seedinfo, 16 + seedinfo->n_entries * sizeof(SeedInfoEntry))) {
+        Debug("Failed writing file");
         return 1;
     }
-    FileClose();
     
     return 0;
 }

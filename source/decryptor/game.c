@@ -1429,21 +1429,23 @@ u32 ConvertSdToCia(u32 param)
         }
         CiaInfo cia;
         GetCiaInfo(&cia, (CiaHeader*) stub);
+        tmd = (TitleMetaData*) (stub + cia.offset_tmd);
+        content_list = (TmdContentChunk*) (tmd + 1);
         
         // search for proper ticket
         u32 t_offset, t_size;
-        bool tik_found = false;
+        bool tik_legit = false;
         PartitionInfo* ctrnand_info = GetPartitionInfo(P_CTRNAND);
         Ticket* ticket = (Ticket*) (stub + cia.offset_ticket);
         Debug("Searching for proper ticket...");
         if (SeekFileInNand(&t_offset, &t_size, "DBS        TICKET  DB ", ctrnand_info) == 0) {
-            for (u32 offset = 0; (offset < t_size) && !tik_found; offset += BUFFER_MAX_SIZE - (2 * NAND_SECTOR_SIZE)) {
+            for (u32 offset = 0; (offset < t_size) && !tik_legit; offset += BUFFER_MAX_SIZE - (2 * NAND_SECTOR_SIZE)) {
                 const u8 sig_type[4] =  { 0x00, 0x01, 0x00, 0x04 };
                 u32 read_bytes = min(BUFFER_MAX_SIZE, (t_size - offset));
                 ShowProgress(offset, t_size);
                 if (DecryptNandToMem(buffer, t_offset + offset, read_bytes, ctrnand_info) != 0)
                     continue;
-                for (u32 i = 0x140; (i < read_bytes - 0x210) && !tik_found; i++) {
+                for (u32 i = 0x140; (i < read_bytes - 0x210) && !tik_legit; i++) {
                     if ((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) &&
                         (memcmp(buffer + i - 0x140, sig_type, 4) == 0)) {
                         // u32 consoleId = getle32(buffer + i + 0x98);
@@ -1451,23 +1453,15 @@ u32 ConvertSdToCia(u32 param)
                         if (memcmp(titleId, ticket->title_id, 8) == 0) {
                             Debug("Found ticket, injecting...");
                             memcpy(ticket, buffer + i - 0x140, sizeof(Ticket));
-                            tik_found = true;
+                            tik_legit = true;
                         }
                     }
                 }
             }
         }
         
-        if (!tik_found) {
+        if (!tik_legit)
             Debug("Ticket not found, skipped");
-        } else { // setup slot 0x11 for titlekey crypto
-            TitleKeyEntry titlekeyEntry;
-            memcpy(titlekeyEntry.titleId, ticket->title_id, 8);
-            memcpy(titlekeyEntry.titleKey, ticket->titlekey, 16);
-            titlekeyEntry.commonKeyIndex = ticket->commonkey_idx;
-            CryptTitlekey(&titlekeyEntry, false);
-            setup_aeskey(0x11, titlekeyEntry.titleKey);
-        }
         
         // wipe console unique info
         if (getbe32(ticket->console_id) || getbe32(ticket->eshop_id)) {
@@ -1475,6 +1469,32 @@ u32 ConvertSdToCia(u32 param)
             memset(ticket->console_id, 0, 4); // zero out console id
             memset(ticket->eshop_id, 0, 4); // zero out eshop id
             memset(ticket->ticket_id, 0, 8); // zero out ticket id
+        }
+        
+        // not (no more?) a legit ticket
+        if (!getbe64(ticket->ticket_id))
+            tik_legit = false;
+        
+        // not a legit ticket, no need to reencrypt
+        if (!tik_legit) {
+            u32 content_count = getbe16(tmd->content_count);
+            Debug("Ticket not legit, disabling reencrypt...");
+            for (u32 c = 0; c < content_count; c++)
+                content_list[c].type[1] &= (0xFF^0x1);
+            for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
+                TmdContentInfo* cntinfo = tmd->contentinfo + i;
+                u32 k = getbe16(cntinfo->cmd_count);
+                sha_quick(cntinfo->hash, content_list + kc, k * sizeof(TmdContentChunk), SHA256_MODE);
+                kc += k;
+            }
+            sha_quick(tmd->contentinfo_hash, (u8*)tmd->contentinfo, 64 * sizeof(TmdContentInfo), SHA256_MODE);
+        }  else { // setup slot 0x11 for titlekey crypto
+            TitleKeyEntry titlekeyEntry;
+            memcpy(titlekeyEntry.titleId, ticket->title_id, 8);
+            memcpy(titlekeyEntry.titleKey, ticket->titlekey, 16);
+            titlekeyEntry.commonKeyIndex = ticket->commonkey_idx;
+            CryptTitlekey(&titlekeyEntry, false);
+            setup_aeskey(0x11, titlekeyEntry.titleKey);
         }
         
         // write CIA stub

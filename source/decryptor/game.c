@@ -1363,6 +1363,7 @@ u32 ConvertSdToCia(u32 param)
     char titlepath[256];
     const char* dest_dir = GetGameDir();
     
+    bool seed_warning = false;
     u32 n_processed = 0;
     u32 n_failed = 0;
     
@@ -1535,6 +1536,10 @@ u32 ConvertSdToCia(u32 param)
                 Debug("Failed decrypting content");
                 break;
             }
+            // check for seed crypto
+            NcchHeader ncch;
+            FileGetData(ciapath, &ncch, sizeof(NcchHeader), offset);
+            seed_warning |= (ncch.flags[7] & 0x20);
         }
         if (c < content_count)
             continue; // error, skip the remaing steps
@@ -1572,6 +1577,12 @@ u32 ConvertSdToCia(u32 param)
     }
     
     if (n_processed || n_failed) {
+        if (seed_warning) {
+            Debug("Warning: One or more contents use seed crypto");
+            Debug("You may increase compatibility by running");
+            Debug("\"CIA Decryptor (deep)\" to fully decrypt.");
+            Debug("");
+        }
         Debug("%ux generated / %ux failed", n_processed, n_failed);
     } else {
         Debug("No usable content found");

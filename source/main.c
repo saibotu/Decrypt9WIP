@@ -74,12 +74,13 @@ MenuInfo menu[] =
         }
     },
     {
-        "Content Decryptor Options", 4,
+        "Content Decryptor Options", 5,
         {
             { "NCCH/NCSD File Options...",    NULL,                   SUBMENU_START + 18 },
             { "CIA File Options...",          NULL,                   SUBMENU_START + 19 },
             { "BOSS File Options...",         NULL,                   SUBMENU_START + 20 },
-            { "SD File Options...",           NULL,                   SUBMENU_START + 21 }
+            { "SD File Options...",           NULL,                   SUBMENU_START + 21 },
+            { "CIA Builder Options...",       NULL,                   SUBMENU_START + 22 }
         }
     },
     {
@@ -308,11 +309,10 @@ MenuInfo menu[] =
         }
     },
     {
-        "NCCH/NCSD File Options", 3, // ID 18
+        "NCCH/NCSD File Options", 2, // ID 18
         {
             { "NCCH/NCSD Decryptor",          &CryptGameFiles,        GC_NCCH_PROCESS },
-            { "NCCH/NCSD Encryptor",          &CryptGameFiles,        GC_NCCH_PROCESS | GC_NCCH_ENC0x2C },
-            { "NCCH/NCSD to CIA Converter",   &ConvertNcsdNcchToCia,  0 }
+            { "NCCH/NCSD Encryptor",          &CryptGameFiles,        GC_NCCH_PROCESS | GC_NCCH_ENC0x2C }
         }
     },
     {
@@ -332,15 +332,23 @@ MenuInfo menu[] =
         }
     },
     {
-        "SD File Options", 7, // ID 21
+        "SD File Options", 5, // ID 21
         {
             { "SD Decryptor/Encryptor",       &CryptSdFiles,          0 },
             { "SD Decryptor (SysNAND dir)",   &DecryptSdFilesDirect,  0 },
             { "SD Decryptor (EmuNAND dir)",   &DecryptSdFilesDirect,  N_EMUNAND },
             { "SD CXI Dumper (SysNAND dir)",  &DecryptSdToCxi,        0 },
-            { "SD CXI Dumper (EmuNAND dir)",  &DecryptSdToCxi,        N_EMUNAND },
-            { "Content to CIA (SysNAND dir)", &ConvertSdToCia,        0 },
-            { "Content to CIA (EmuNAND dir)", &ConvertSdToCia,        N_EMUNAND }
+            { "SD CXI Dumper (EmuNAND dir)",  &DecryptSdToCxi,        N_EMUNAND }
+        }
+    },
+    {
+         "CIA Builder Options", 5, // ID 22
+        {
+            { "Build CIA from NCCH/NCSD",     &ConvertNcsdNcchToCia,  0 },
+            { "CIA Builder (SysNAND/orig.)",  &ConvertSdToCia,        0 },
+            { "CIA Builder (EmuNAND/orig.)",  &ConvertSdToCia,        N_EMUNAND },
+            { "CIA Builder (SysNAND/decr.)",  &ConvertSdToCia,        GC_CIA_DEEP },
+            { "CIA Builder (EmuNAND/decr.)",  &ConvertSdToCia,        GC_CIA_DEEP | N_EMUNAND }
         }
     },
     {

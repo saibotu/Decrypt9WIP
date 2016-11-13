@@ -153,6 +153,7 @@ This is actually two categories in the main menu, but the functionality provided
   * __GBA VC Save Dump__: Only available on SysNAND, use this to dump the GBA VC Savegame from your NAND. Other than the headered `AGBSAVE.bin` format, this allows usage in emulators. `slot0x24keyY.bin` is required for this to work. For info on how to use this and the below feature, see [here](https://gbatemp.net/threads/download-decrypt9-open-source-decryption-tools-wip.388831/page-196#post-6615811).
   * __GBA VC Save Inject__: Only available on SysNAND, use this to inject back a GBA VC Savegame (f.e. after manual editing) to your NAND. Same as above, `slot0x24keyY.bin` is required for this to work.
   * __Update SeedDB__: Use this to create or update the `seeddb.bin` file on your SD card with the seeds currently installed in your Sys/EmuNAND. Only new seeds will get added to `seeddb.bin`, seeds already in the database stay untouched.
+  * __Dump Config (for Citra)__: Use this to dump the `config` file, which is required by the [Citra emulator](https://citra-emu.org/) for certain games. Also see [here](https://github.com/citra-emu/citra/wiki/Home-Folder).
   * __NCCH FIRMs Dump__: Use this to dump NATIVE_FIRM, SAFE_MODE_FIRM, TWL_FIRM and AGB_FIRM from your NAND. For N3DS FIRMs, the ARM9 section will be decrypted as well. This feature is at the moment only useful for research.
   * __FIRM ARM9 Decryptor__: Use this to decrypt the ARM9 section of N3DS FIRMs. This feature is at the moment only useful for research.
 
@@ -161,7 +162,6 @@ This category includes all features that allow the decryption (and encryption) o
 * __NCCH/NCSD File Options__: Files with .3DS and .APP extension are typically NCCH / NCSD files. NCCH/NCSD typically contain game or appdata.
   * __NCCH/NCSD Decryptor__: Use this to fully decrypt all NCCH / NCSD files in the folder. A full decryption of a .3DS file is otherwise also known as _cryptofixing_. Important Note: Depending on you 3DS console type / FW version and the encryption in your NCCH/NCSD files you may need additional files key files (see 'Support files' above) and / or `seeddb.bin`.
   * __NCCH/NCSD Encryptor__: Use this to (re-)encrypt all NCCH / NCSD files in the folder using standard encryption (f.e. after decrypting them). Standard encryption can be processed on any 3DS, starting from the lowest firmware versions. On some hardware, .3DS files might need to be encrypted for compatibility.
-  * __NCCH/NCSD to CIA Converter__: This allows you to convert any NCCH/NCSD file to an installable (on a signature patched system) CIA file. The CIA file will be written to `filename.ext.cia`.
 * __CIA File Options__: CIA files are 'Content Installable Files', this entry contains all related features.
   * __CIA Decryptor (shallow)__: Use this to decrypt, for all CIA files in the folder, the titlekey layer of CIA decryption. The internal NCCH encryption is left untouched.
   * __CIA Decryptor (deep)__:  Use this to fully decrypt all CIA files in the folder. This also processes the internal NCCH encryption. Deep decryption of a CIA file is otherwise known as _cryptofixing_. This also may need additional key files and / or `seeddb.bin`, see 'Support files' above.
@@ -176,8 +176,12 @@ This category includes all features that allow the decryption (and encryption) o
   * __SD Decryptor (EmuNAND dir)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
   * __SD CXI Dumper (SysNAND dir)__: This feature is similar to the SD Decryptor, but only handles the CXI (CTR eXecutable Image), uses `title_id.cxi` as file name and fully decrypts the NCCH. This is useful to create images for use in [Citra](https://citra-emu.org/) from installed content. This handles content from the `/Nintendo 3DS/` subfolder belonging to SysNAND.
   * __SD CXI Dumper (EmuNAND dir)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
-  * __Content to CIA (SysNAND dir)__: This feature allows you to directly convert content installed to the SD card to a CIA file. It handles content from the `/Nintendo 3DS/` subfolder belonging to SysNAND. If you need similar functionality for titles installed to NAND, use [ctrnand-title-cia-gen](https://github.com/ihaveamac/ctrnand-title-cia-gen) by ihaveamac.
-  * __Content to CIA (EmuNAND dir)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
+* __CIA Builder Options__: This subsection contains various features that allow you to build CIAs from files installed to / stored on your SD card.
+  * __Build CIA from NCCH/NCSD__:  This was previously called 'NCCH/NCSD to CIA Converter'. It allows you to convert any NCCH/NCSD file (that means .3DS files, too) to an installable (on a signature patched system) CIA file. The CIA file will be written to `filename.ext.cia`.
+  * __CIA Builder (SysNAND/orig.)__: This was previously called 'Content to CIA (SysNAND dir)'. This feature allows you to directly convert content installed to the SD card to a CIA file. It handles content from the `/Nintendo 3DS/` subfolder belonging to SysNAND. This variant of the feature tries to build CIAs as genuine as possible, while still wiping identifying information from the file. If you need similar functionality for titles installed to NAND, use [ctrnand-title-cia-gen](https://github.com/ihaveamac/ctrnand-title-cia-gen) by ihaveamac.
+  * __CIA Builder (EmuNAND/orig.)__: This was previously called 'Content to CIA (EmuNAND dir)__' and has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
+  * __CIA Builder (SysNAND/decr.)__: This feature has the same functionality as the features above. In addition, it fully decrypts the CIA files it generates for better compatibility. Take note that the additional decryption and recalculation of checksums mean longer processing times. This handles content from the `/Nintendo 3DS/` subfolder belonging to SysNAND.
+  * __CIA Builder (EmuNAND/decr.)__: This has the same functionality as the feature above, but handles the content of the `/Nintendo 3DS/` subfolder belonging to the EmuNAND instead.
 
 ### Gamecart Dumper Options
 This category includes all features handling dumping of content from external cartridges. Cartridge dumps are also known as .3ds files.
@@ -219,5 +223,5 @@ You may use this under the terms of the GNU General Public License GPL v2 or und
 * profi200 for helpful hints that first made developing some features possible
 * Al3x_10m for helping me with countless hours of testing and useful advice
 * SciresM and Reisyukaku for helping me allow devkit compatibility
-* liomajor, Datalogger, zoogie, atkfromabove, mixups, key1340, k8099, Supster131, stbinan, Wolfvak, imanoob, Stary2001 and countless others from freenode #Cakey and the GBAtemp forums for testing, feedback and helpful hints
+* liomajor, Datalogger, zoogie, atkfromabove, mixups, key1340, k8099, Supster131, stbinan, Wolfvak, imanoob, Stary2001, kasai07 and countless others from freenode #Cakey and the GBAtemp forums for testing, feedback and helpful hints
 * Everyone I forgot about - if you think you deserve to be mentioned, just contact me

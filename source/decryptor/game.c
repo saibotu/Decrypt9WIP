@@ -1169,6 +1169,7 @@ u32 ConvertNcsdNcchToCia(u32 param)
             continue; // skip NAND backup NCSDs
         
         n_failed++; // this will be set back upon completion
+        Debug("");
         Debug("Converting to CIA: %s", path + path_len);
         
         // build the CIA stub
@@ -1370,13 +1371,11 @@ u32 DecryptSdFilesDirect(u32 param)
 
 u32 ConvertSdToCia(u32 param)
 {
-    (void) (param); // param is unused here
     char* filelist = (char*) 0x20400000;
     u8 movable_keyY[16] = { 0 };
     char titlepath[256];
     const char* dest_dir = GetGameDir();
     
-    bool seed_warning = false;
     u32 n_processed = 0;
     u32 n_failed = 0;
     
@@ -1493,10 +1492,11 @@ u32 ConvertSdToCia(u32 param)
         if (!getbe64(ticket->ticket_id))
             tik_legit = false;
         
-        // not a legit ticket, no need to reencrypt
-        if (!tik_legit) {
+        // not a legit ticket or decrypted param, no need to reencrypt
+        if (!tik_legit || (param & GC_CIA_DEEP)) {
             u32 content_count = getbe16(tmd->content_count);
-            Debug("Ticket not legit, disabling reencrypt...");
+            if (!tik_legit && !(param & GC_CIA_DEEP))
+                Debug("Ticket not legit, disabling reencrypt...");
             for (u32 c = 0; c < content_count; c++)
                 content_list[c].type[1] &= (0xFF^0x1);
             for (u32 i = 0, kc = 0; i < 64 && kc < content_count; i++) {
@@ -1543,23 +1543,26 @@ u32 ConvertSdToCia(u32 param)
                 break;
             }
             FileClose();
-            Debug("Decrypting content id %08lX...", id);
+            Debug("Decrypting content id %08lX (SD)...", id);
             GetSdCtr(info.ctr, subpath);
             if (CryptSdToSd(ciapath, offset, size, &info, false) != 0) {
                 Debug("Failed decrypting content");
                 break;
             }
-            // check for seed crypto
-            NcchHeader ncch;
-            FileGetData(ciapath, &ncch, sizeof(NcchHeader), offset);
-            seed_warning |= (ncch.flags[7] & 0x20);
+            if (param & GC_CIA_DEEP) {
+                Debug("Decrypting content id %08lX (NCCH)...", id);
+                if (CryptNcch(ciapath, offset, size, 0, NULL) == 1) {
+                    Debug("Failed decrypting content");
+                    break;
+                }
+            }
         }
         if (c < content_count)
             continue; // error, skip the remaing steps
         
         // finalize the CIA file
         Debug("Finalizing CIA file...");
-        if (FinalizeCiaFile(ciapath, true) != 0) {
+        if (FinalizeCiaFile(ciapath, !(param & GC_CIA_DEEP)) != 0) {
             Debug("Failed!");
             continue;
         }
@@ -1590,12 +1593,6 @@ u32 ConvertSdToCia(u32 param)
     }
     
     if (n_processed || n_failed) {
-        if (seed_warning) {
-            Debug("Warning: One or more contents use seed crypto");
-            Debug("You may increase compatibility by running");
-            Debug("\"CIA Decryptor (deep)\" to fully decrypt.");
-            Debug("");
-        }
         Debug("%ux generated / %ux failed", n_processed, n_failed);
     } else {
         Debug("No usable content found");

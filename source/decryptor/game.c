@@ -1296,6 +1296,7 @@ u32 CryptSdFiles(u32 param)
             } else {
                 Debug("Failed!");
                 n_failed++;
+                break;
             }
         }
     }
@@ -1351,6 +1352,7 @@ u32 DecryptSdFilesDirect(u32 param)
             if (FileCopyTo(dstpath, BUFFER_ADDRESS, BUFFER_MAX_SIZE) != fsize) {
                 Debug("Could not copy: %s", srcpath + bplen);
                 n_failed++;
+                break;
             }
             FileClose();
         } else {
@@ -1363,6 +1365,7 @@ u32 DecryptSdFilesDirect(u32 param)
         } else {
             Debug("Failed!");
             n_failed++;
+            break;
         }
     }
     
@@ -1558,13 +1561,13 @@ u32 ConvertSdToCia(u32 param)
             }
         }
         if (c < content_count)
-            continue; // error, skip the remaing steps
+            break; // error, skip the remaing steps
         
         // finalize the CIA file
         Debug("Finalizing CIA file...");
         if (FinalizeCiaFile(ciapath, !(param & GC_CIA_DEEP)) != 0) {
             Debug("Failed!");
-            continue;
+            break;
         }
         
         next_offset = stub_size;
@@ -1580,12 +1583,12 @@ u32 ConvertSdToCia(u32 param)
                 Debug("Reencrypting content id %08lX...", id);
                 if (CryptSdToSd(ciapath, offset, size, &info_tk, false) != 0) {
                     Debug("Failed encrypting content");
-                    continue;
+                    break;
                 }
             }
         }
         if (c < content_count)
-            continue; // error, skip the remaing steps
+            break; // error, leave loop
         
         n_failed--;
         n_processed++;

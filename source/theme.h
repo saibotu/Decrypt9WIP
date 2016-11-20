@@ -1,7 +1,8 @@
 #pragma once
 
-#ifdef USE_THEME
 #include "common.h"
+
+#ifdef USE_THEME
 #include "draw.h"
 
 #define GFX_PROGRESS  "progress.bin"

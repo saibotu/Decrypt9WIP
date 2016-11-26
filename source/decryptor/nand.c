@@ -894,7 +894,7 @@ u32 RestoreNand(u32 param)
     
     // check EmuNAND partition size
     if (emunand_header) {
-        if (((NumHiddenSectors() - emunand_offset) * NAND_SECTOR_SIZE < NAND_MIN_SIZE) || (NumHiddenSectors() < emunand_header)) {
+        if (((NumHiddenSectors() - emunand_offset) < (NAND_MIN_SIZE / NAND_SECTOR_SIZE)) || (NumHiddenSectors() < emunand_header)) {
             Debug("Error: Not enough space in EmuNAND partition");
             return 1; // this really should not happen
         } else if (emunand_offset + getMMCDevice(0)->total_size > NumHiddenSectors()) {
@@ -1238,7 +1238,7 @@ u32 InjectGbaVcSave(u32 param)
     
     // get the save from file
     Debug("Encrypting & Injecting GBA VC Save...");
-    if (InputFileNameSelector(filename, "gbavc.sav", NULL, NULL, 0, save_size, false) != 0)
+    if (InputFileNameSelector(filename, "gbavc.sav", NULL, NULL, 0, save_size, true) != 0)
         return 1;
     if (FileGetData(filename, agbsave + 0x200, save_size, 0) != save_size)
         return 1;

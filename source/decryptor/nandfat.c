@@ -850,6 +850,7 @@ u32 FindSeedInSeedSave(u8* seed, u64 titleId)
     PartitionInfo* p_info = GetPartitionInfo(f_info->partition_id);
     u8* buffer = BUFFER_ADDRESS;
     
+    u32 p_active = 0;
     u32 offset;
     u32 size;
     
@@ -862,10 +863,11 @@ u32 FindSeedInSeedSave(u8* seed, u64 titleId)
     }
     if (DecryptNandToMem(buffer, offset, size, p_info) != 0)
         return 1;
+    p_active = (getle32(buffer + 0x168)) ? 1 : 0;
     
     // search and extract seeds
     for ( int n = 0; n < 2; n++ ) {
-        u8* seed_data = buffer + seed_offset[n];
+        u8* seed_data = buffer + seed_offset[(n + p_active) % 2];
         for ( size_t i = 0; i < 2000; i++ ) {
             // 2000 seed entries max, splitted into title id and seed area
             u8* ltitleId = seed_data + (i*8);
@@ -893,6 +895,7 @@ u32 UpdateSeedDb(u32 param)
     SeedInfo *seedinfo = (SeedInfo*) 0x20400000;
     
     u32 nNewSeeds = 0;
+    u32 p_active = 0;
     u32 offset;
     u32 size;
     
@@ -905,6 +908,7 @@ u32 UpdateSeedDb(u32 param)
     }
     if (DecryptNandToMem(buffer, offset, size, p_info) != 0)
         return 1;
+    p_active = (getle32(buffer + 0x168)) ? 1 : 0;
     
     // load / create seeddb.bin
     u32 size_seeddb;
@@ -922,7 +926,7 @@ u32 UpdateSeedDb(u32 param)
     
     // search and extract seeds
     for ( int n = 0; n < 2; n++ ) {
-        u8* seed_data = buffer + seed_offset[n];
+        u8* seed_data = buffer + seed_offset[(n + p_active) % 2];
         for ( size_t i = 0; i < 2000; i++ ) {
             static const u8 zeroes[16] = { 0x00 };
             // magic number is the reversed first 4 byte of a title id

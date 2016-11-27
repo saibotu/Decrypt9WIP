@@ -1477,6 +1477,8 @@ u32 ConvertSdToCia(u32 param)
                         }
                     }
                 }
+                if (DebugCheckCancel())
+                    return 1;
             }
         }
         
@@ -1522,7 +1524,7 @@ u32 ConvertSdToCia(u32 param)
         Debug("Writing CIA stub (%lu byte)...", stub_size);
         if (FileDumpData(ciapath, stub, stub_size) != stub_size) {
             Debug("Failed writing the CIA stub");
-            continue;
+            break;
         }
         
         // inject content file(s)

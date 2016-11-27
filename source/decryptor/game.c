@@ -352,11 +352,22 @@ u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encryp
             }
             FileClose();
         }
-        if (found) {
+        if (found) { // validate seed
+            u8 valdata[16 + 8];
             u8 keydata[32];
+            u8 sha256sum[32];
+            // validate seed
+            memcpy(valdata, seed, 16);
+            memcpy(valdata + 16, &(ncch->programId), 8);
+            sha_quick(sha256sum, valdata, 16 + 8, SHA256_MODE);
+            if (memcmp(&(ncch->hash_seed), sha256sum, 4) != 0) {
+                Debug("Seed found, but validation failed!");
+                Debug("Try fixing your seeddb.bin");
+                return 1;
+            }
+            // set seed key
             memcpy(keydata, ncch->signature, 16);
             memcpy(keydata + 16, seed, 16);
-            u8 sha256sum[32];
             sha_quick(sha256sum, keydata, 32, SHA256_MODE);
             memcpy(seedKeyY, sha256sum, 16);
         } else {

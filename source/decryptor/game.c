@@ -135,7 +135,7 @@ u32 SdFolderSelector(char* path, u8* keyY, bool title_select)
             if ((index < n_dirs - 1) && (strchrcount(dirptr[index+1], '/') > cur_lvl))
                 index++; // this only works because of the sorting of the dir list
         } else if ((pad_state & BUTTON_LEFT) && (cur_lvl > 4)) { // down one level
-            while ((index > 0) && (cur_lvl == strchrcount(dirptr[index], '/')))
+            while ((index > 0) && (cur_lvl <= strchrcount(dirptr[index], '/')))
                 index--;
         } else if (pad_state & BUTTON_A) {
             DebugColor(COLOR_ASK, "%s", path + 13 + 33 + 33);

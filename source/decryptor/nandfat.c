@@ -477,6 +477,16 @@ u32 FixNandCmac(u32 param) {
     return 0;
 }
 
+u32 ValidateSeed(u8* seed, u64 titleId, u8* hash) {
+    u8 valdata[16 + 8];
+    u8 sha256sum[32];
+    // validate seed
+    memcpy(valdata, seed, 16);
+    memcpy(valdata + 16, &titleId, 8);
+    sha_quick(sha256sum, valdata, 16 + 8, SHA256_MODE);
+    return (memcmp(hash, sha256sum, 4) == 0) ? 0 : 1;
+}
+
 u32 CheckNandFile(u32 param) {
     NandFileInfo* f_info = GetNandFileInfo(param);
     PartitionInfo* p_info = GetPartitionInfo(f_info->partition_id);
@@ -841,7 +851,7 @@ u32 DumpCitraConfig(u32 param)
     return 1; // failed if arriving here
 }
 
-u32 FindSeedInSeedSave(u8* seed, u64 titleId)
+u32 FindSeedInSeedSave(u8* seed, u64 titleId, u8* hash)
 {
     // there are two offsets where seeds can be found - 0x07000 & 0x5C000
     static const u32 seed_offset[2] = {0x7000, 0x5C000};
@@ -873,6 +883,8 @@ u32 FindSeedInSeedSave(u8* seed, u64 titleId)
             u8* ltitleId = seed_data + (i*8);
             u8* lseed = seed_data + (2000*8) + (i*16);
             if (titleId != getle64(ltitleId))
+                continue;
+            if (hash && (ValidateSeed(lseed, titleId, hash) != 0))
                 continue;
             memcpy(seed, lseed, 16);
             return 0;

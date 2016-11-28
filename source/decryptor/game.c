@@ -335,7 +335,7 @@ u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encryp
     if (usesSeedCrypto) {
         u8 seed[16];
         u32 found = 0;
-        if (FindSeedInSeedSave(seed, seedId) == 0) { // try loading from NAND
+        if (FindSeedInSeedSave(seed, seedId, ncch->hash_seed) == 0) { // try loading from NAND
             Debug("Loading seed from NAND: ok");
             found = 1;
         } else if (FileOpen("seeddb.bin")) { // try loading from seeddb.bin
@@ -352,20 +352,16 @@ u32 CryptNcch(const char* filename, u32 offset, u32 size, u64 seedId, u8* encryp
             }
             FileClose();
         }
-        if (found) { // validate seed
-            u8 valdata[16 + 8];
-            u8 keydata[32];
-            u8 sha256sum[32];
+        if (found) {
             // validate seed
-            memcpy(valdata, seed, 16);
-            memcpy(valdata + 16, &(ncch->programId), 8);
-            sha_quick(sha256sum, valdata, 16 + 8, SHA256_MODE);
-            if (memcmp(&(ncch->hash_seed), sha256sum, 4) != 0) {
+            if (ValidateSeed(seed, seedId, ncch->hash_seed) != 0) {
                 Debug("Seed found, but validation failed!");
                 Debug("Try fixing your seeddb.bin");
                 return 1;
             }
             // set seed key
+            u8 keydata[32];
+            u8 sha256sum[32];
             memcpy(keydata, ncch->signature, 16);
             memcpy(keydata + 16, seed, 16);
             sha_quick(sha256sum, keydata, 32, SHA256_MODE);

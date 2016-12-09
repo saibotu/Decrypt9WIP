@@ -91,8 +91,9 @@ u32 DumpTicketsTitlekeys(u32 param)
         if (DecryptNandToMem(buffer, offset + t_offset, read_bytes, ctrnand_info) != 0)
             return 1;
         for (u32 i = 0x140; i < read_bytes - 0x210; i++) {
-            if ((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) &&
-                (memcmp(buffer + i - 0x140, sig_type, 4) == 0)) {
+            if (((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) ||  // retail tickets
+                 (memcmp(buffer + i, (u8*) "Root-CA00000004-XS00000009", 26) == 0)) && // devkit tickets
+                 (memcmp(buffer + i - 0x140, sig_type, 4) == 0)) {
                 u32 exid;
                 u32 consoleId = getle32(buffer + i + 0x98);
                 u8* titleId = buffer + i + 0x9C;

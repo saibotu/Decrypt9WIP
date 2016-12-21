@@ -96,7 +96,11 @@ const char *DumpGameCartFullDesc    = "Dump the inserted gamecart to the Game di
 // NDS Flashcart Options
 const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game directory.",
 
-           *AK2iInjectDesc          = "Inject teh Ak2i flashcart bootrom from the Game directory.";
+           *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game directory.",
+
+           *AK2iAutoPatchDesc       = "Automatic NTRCARDHAX injection to the AK2i flashcart.",
+
+           *AK2iPatchAndInjectDesc  = "Patch and Inject NTRCARDHAX payload to the AK2i flashcart.";
 
 // SysNAND/EmuNAND Backup/Restore Options
 const char *DumpNandFullDesc       = "Dump the full target NAND to the Work directory.",

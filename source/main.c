@@ -177,12 +177,13 @@ int main()
             }
         },
         {
-            "NDS Flashcart Options", 4,
+            "NDS Flashcart Options", 5,
             {
                 { "Auto NTRCARDHAX to AK2i",      AK2iAutoPatchDesc,       &AutoAk2iCart,          0 },
                 { "Dump AK2i",                    AK2iDumpDesc,            &DumpAk2iCart,          0 },
                 { "Inject AK2i",                  AK2iInjectDesc,          &InjectAk2iCart,        0 },
-                { "Inject NTRCARDHAX to AK2i",    AK2iPatchAndInjectDesc,  &PatchAndInjectAk2iCart,0 }
+                { "Inject NTRCARDHAX to AK2i",    AK2iPatchAndInjectDesc,  &PatchAndInjectAk2iCart,0 },
+                { "Restore AK2i bootrom",         AK2iRestoreBootromDesc,  &RestoreAk2iCart,       0 }
             }
         },
         {

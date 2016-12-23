@@ -93,14 +93,22 @@ const char *DumpGameCartFullDesc    = "Dump the inserted gamecart to the Game di
            *DumpPrivateHeaderDesc   = "Dump the private header of the inserted gamecart\n"
                                       "to the Game directory, for use with flashcarts.";
 
+
 // NDS Flashcart Options
-const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game directory.",
+const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game\n"
+                                      "directory.",
 
-           *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game directory.",
+           *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game\n"
+                                      "directory.",
 
-           *AK2iAutoPatchDesc       = "Automatic NTRCARDHAX injection to the AK2i flashcart.",
+           *AK2iAutoPatchDesc       = "Automatic NTRCARDHAX injection to the AK2i\n"
+                                      "flashcart.",
 
-           *AK2iPatchAndInjectDesc  = "Patch and Inject NTRCARDHAX payload to the AK2i flashcart.";
+           *AK2iPatchAndInjectDesc  = "Patch and Inject NTRCARDHAX payload to the\n"
+                                      "AK2i flashcart.",
+
+           *AK2iRestoreBootromDesc  = "Restore the AK2i flashcart original bootrom.";
+
 
 // SysNAND/EmuNAND Backup/Restore Options
 const char *DumpNandFullDesc       = "Dump the full target NAND to the Work directory.",

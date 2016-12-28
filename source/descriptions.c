@@ -96,16 +96,22 @@ const char *DumpGameCartFullDesc    = "Dump the inserted gamecart to the Game di
 
 // NDS Flashcart Options
 const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game\n"
-                                      "directory.",
+                                      "directory.\n \n",
 
            *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game\n"
                                       "directory.",
 
            *AK2iAutoPatchDesc       = "Automatic NTRCARDHAX injection to the AK2i\n"
-                                      "flashcart.",
+                                      "flashcart."
+                                      
+                                      "AK2i 1.41 version required. If your cart is not on\n"
+                                      "this version, upgrade or downgrade to it.",
 
-           *AK2iPatchAndInjectDesc  = "Patch and Inject NTRCARDHAX payload to the\n"
-                                      "AK2i flashcart.",
+           *AK2iPatchAndInjectDesc  = "Patch and inject NTRCARDHAX payload to the\n"
+                                      "AK2i flashcart.\n \n"
+                                      
+                                      "AK2i 1.41 version required. If your cart is not on\n"
+                                      "this version, upgrade or downgrade to it.",
 
            *AK2iRestoreBootromDesc  = "Restore the AK2i flashcart original bootrom.";
 

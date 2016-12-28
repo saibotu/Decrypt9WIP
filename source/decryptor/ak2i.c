@@ -377,6 +377,8 @@ u8 loader_bin[0x44] =
 
 u32 DumpAk2iCart(u32 param)
 {
+    (void) param; // unused here
+    
     // check if cartridge inserted
     if (REG_CARDCONF2 & 0x1) {
         Debug("Cartridge was not detected");
@@ -578,6 +580,8 @@ int32_t patchBootrom(u8* bootrom, const struct ntrcardhax_info *info) {
 
 u32 InjectAk2iCart(u32 param)
 {
+    (void) param; // unused here
+    
     // check if cartridge inserted
     if (REG_CARDCONF2 & 0x1) {
         Debug("Cartridge was not detected");

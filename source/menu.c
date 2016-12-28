@@ -93,8 +93,8 @@ void DisplayOptionInfo(MenuEntry *entry)
     DrawStringFC(10, 10, false, COLOR_GREEN, "%s:", entry->name);
     DrawStringF(10, 20, false, entry->info);
     DrawStringF(10, 200, false, "For more information, please read\ngithub.com/d0k3/Decrypt9WIP/tree/master/README.md");
-    DrawStringF(10, 220, false, "Press any key to continue.");
-    while (!InputWait());
+    DrawStringF(10, 220, false, "Release Y to continue.");
+    while (CheckButton(BUTTON_Y));
 
     memcpy(BOT_SCREEN, fb_backup_loc, fb_backup_len);
 
@@ -317,8 +317,8 @@ u32 ProcessMenu(MenuInfo* info, u32 n_entries_main)
                 BatchScreenshot(info, pad_state & BUTTON_RIGHT) : Screenshot(NULL);
         } else if (pad_state & BUTTON_Y) {
             DisplayOptionInfo(currMenu->entries + index);
-        }
-         else {
+            full_draw = false;
+        } else {
             full_draw = false;
         }
         if (pad_state & BUTTON_START) {

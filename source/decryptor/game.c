@@ -1473,7 +1473,8 @@ u32 ConvertSdToCia(u32 param)
                 if (DecryptNandToMem(buffer, t_offset + offset, read_bytes, ctrnand_info) != 0)
                     continue;
                 for (u32 i = 0x140; (i < read_bytes - 0x210) && !tik_legit; i++) {
-                    if ((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) &&
+                    if (((memcmp(buffer + i, (u8*) "Root-CA00000003-XS0000000c", 26) == 0) ||
+                        (memcmp(buffer + i, (u8*) "Root-CA00000004-XS00000009", 26) == 0)) &&
                         (memcmp(buffer + i - 0x140, sig_type, 4) == 0)) {
                         // u32 consoleId = getle32(buffer + i + 0x98);
                         u8* titleId = buffer + i + 0x9C;

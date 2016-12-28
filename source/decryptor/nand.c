@@ -8,6 +8,7 @@
 #include "decryptor/hashfile.h"
 #include "decryptor/keys.h"
 #include "decryptor/nand.h"
+#include "decryptor/nandfat.h" // for serial in NAND backup name
 #include "fatfs/sdmmc.h"
 
 // return values for NAND header check
@@ -397,7 +398,8 @@ static u32 CheckNandDumpIntegrity(const char* path, bool check_firm) {
 }
 
 u32 OutputFileNameSelector(char* filename, const char* basename, char* extension) {
-    char bases[3][64] = { 0 };
+    char bases[4][64] = { 0 };
+    char serial[16] = { 0 };
     char* dotpos = NULL;
     
     // build first base name and extension
@@ -411,8 +413,9 @@ u32 OutputFileNameSelector(char* filename, const char* basename, char* extension
     }
     
     // build other two base names
-    snprintf(bases[1], 63, "%s_%s", bases[0], (emunand_header) ? "emu" : "sys");
-    snprintf(bases[2], 63, "%s%s" , (emunand_header) ? "emu" : "sys", bases[0]);
+    snprintf(bases[1], 63, "%s_%s", (GetSerial(serial) == 0) ? serial : "UNK", bases[0]);
+    snprintf(bases[2], 63, "%s_%s", bases[0], (emunand_header) ? "emu" : "sys");
+    snprintf(bases[3], 63, "%s%s" , (emunand_header) ? "emu" : "sys", bases[0]);
     
     u32 fn_id = (emunand_header) ? 1 : 0;
     u32 fn_num = (emunand_header) ? (emunand_offset / EMUNAND_MULTI_SECTORS) : 0;
@@ -432,9 +435,9 @@ u32 OutputFileNameSelector(char* filename, const char* basename, char* extension
         // user input routine
         u32 pad_state = InputWait();
         if (pad_state & BUTTON_DOWN) { // increment filename id
-            fn_id = (fn_id + 1) % 3;
+            fn_id = (fn_id + 1) % 4;
         } else if (pad_state & BUTTON_UP) { // decrement filename id
-            fn_id = (fn_id > 0) ? fn_id - 1 : 2;
+            fn_id = (fn_id > 0) ? fn_id - 1 : 3;
         } else if ((pad_state & BUTTON_RIGHT) && (fn_num < 9)) { // increment number
             fn_num++;
         } else if ((pad_state & BUTTON_LEFT) && (fn_num > 0)) { // decrement number

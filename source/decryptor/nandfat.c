@@ -399,6 +399,21 @@ u32 GetRegion(void)
     return (u32) secureinfo[0x100];
 }
 
+u32 GetSerial(char* serial)
+{
+    PartitionInfo* p_info = GetPartitionInfo(P_CTRNAND);
+    u8 secureinfo[0x200];
+    u32 offset;
+    u32 size;
+    
+    if ((SeekFileInNand(&offset, &size, "RW         SYS        SECURE~?   ", p_info) != 0) ||
+        (DecryptNandToMem(secureinfo, offset, size, p_info) != 0))
+        return 1;
+    
+    snprintf(serial, 16, "%.15s", (char*) (secureinfo + 0x102));
+    return 0;
+}
+
 u32 GetSystemId0(u8* id0)
 {
     PartitionInfo* p_info = GetPartitionInfo(P_CTRNAND);

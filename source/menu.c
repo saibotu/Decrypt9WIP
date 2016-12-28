@@ -315,9 +315,11 @@ u32 ProcessMenu(MenuInfo* info, u32 n_entries_main)
         } else if (pad_state & BUTTON_X) {
             (pad_state & (BUTTON_LEFT | BUTTON_RIGHT)) ?
                 BatchScreenshot(info, pad_state & BUTTON_RIGHT) : Screenshot(NULL);
+        #if FONT_WIDTH_EXT <= 6
         } else if (pad_state & BUTTON_Y) {
             DisplayOptionInfo(currMenu->entries + index);
             full_draw = false;
+        #endif
         } else {
             full_draw = false;
         }

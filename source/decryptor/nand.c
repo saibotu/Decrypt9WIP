@@ -1349,8 +1349,8 @@ u32 DecryptFirmArm9Mem(u8* firm, u32 f_size)
     memcpy(info.ctr, arm9bin + 0x20, 16);
     CryptBuffer(&info);
     
-    // recalculate section 2 hash
-    sha_quick(firm + 0x40 + 0x10 + (0x30*2), arm9bin, bin_size, SHA256_MODE);
+    // recalculate section hash
+    sha_quick(firm + 0x40 + 0x10 + (0x30*section), arm9bin, bin_size, SHA256_MODE);
     
     // mark FIRM as decrypted
     memcpy(firm, (u8*) "FIRMDEC", 7);

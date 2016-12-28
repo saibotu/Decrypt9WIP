@@ -8,6 +8,7 @@
 #include "i2c.h"
 #include "decryptor/keys.h"
 #include "decryptor/game.h"
+#include "decryptor/ak2i.h"
 #include "decryptor/nand.h"
 #include "decryptor/nandfat.h"
 #include "decryptor/titlekey.h"
@@ -15,7 +16,7 @@
 #include "decryptor/xorpad.h"
 #include "decryptor/transfer.h"
 
-#define SUBMENU_START 7
+#define SUBMENU_START 8
 
 void Reboot()
 {
@@ -173,6 +174,16 @@ int main()
                 { "Dump & Decrypt Cart (trim)",   DumpGameCartDecTrimDesc, &DumpGameCart,          CD_DECRYPT | CD_TRIM },
                 { "Dump Cart to CIA",             DumpGameCartCIADesc,     &DumpGameCart,          CD_DECRYPT | CD_MAKECIA },
                 { "Dump Private Header",          DumpPrivateHeaderDesc,   &DumpPrivateHeader,     0 }
+            }
+        },
+        {
+            "NDS Flashcart Options", 5,
+            {
+                { "Auto NTRCARDHAX to AK2i",      AK2iAutoPatchDesc,       &AutoAk2iCart,          0 },
+                { "Dump AK2i",                    AK2iDumpDesc,            &DumpAk2iCart,          0 },
+                { "Inject AK2i",                  AK2iInjectDesc,          &InjectAk2iCart,        0 },
+                { "Inject NTRCARDHAX to AK2i",    AK2iPatchAndInjectDesc,  &PatchAndInjectAk2iCart,0 },
+                { "Restore AK2i bootrom",         AK2iRestoreBootromDesc,  &RestoreAk2iCart,       0 }
             }
         },
         {

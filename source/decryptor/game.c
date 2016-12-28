@@ -2160,6 +2160,11 @@ u32 DumpTwlGameCart(u32 param)
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
     Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
+    
+    if (data_size > cart_size) {
+        Debug("Used size exceeds cartridge size");
+        return 1; // should never happen
+    }
 
     if (!NTR_Secure_Init (buff, Cart_GetID(), 0)) {
         Debug("Error reading secure data");

@@ -166,7 +166,7 @@ int main()
             }
         },
         {
-            "Gamecart Dumper Options", 8,
+            "Gamecart Dumper Options", 7,
             {
                 { "Dump Cart (full)",             DumpGameCartFullDesc,    &DumpGameCart,          0 },
                 { "Dump Cart (trim)",             DumpGameCartTrimDesc,    &DumpGameCart,          CD_TRIM },
@@ -174,7 +174,7 @@ int main()
                 { "Dump & Decrypt Cart (trim)",   DumpGameCartDecTrimDesc, &DumpGameCart,          CD_DECRYPT | CD_TRIM },
                 { "Dump Cart to CIA",             DumpGameCartCIADesc,     &DumpGameCart,          CD_DECRYPT | CD_MAKECIA },
                 { "Dump Private Header",          DumpPrivateHeaderDesc,   &DumpPrivateHeader,     0 },
-                { "Dump Savegame from Cart",      DumpCartSaveDesc,        &ProcessCartSave,       0 },
+                // { "Dump Savegame from Cart",      DumpCartSaveDesc,        &ProcessCartSave,       0 },
                 { "Flash Savegame to Cart",       DumpCartSaveDesc,        &ProcessCartSave,       CD_FLASH }
             }
         },

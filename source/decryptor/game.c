@@ -2305,6 +2305,70 @@ u32 DumpPrivateHeader(u32 param)
         Debug("Could not create output file on SD");
         return 1;
     }
+
+    return 0;
+}
+
+u32 ProcessCartSave(u32 param)
+{
+    u8* buffer = BUFFER_ADDRESS;
+    char filename[64];
+    u32 saveSize = 0;
+    int saveType = 0;
+    u32 cartId;
+    
+    // check if cartridge inserted
+    if (REG_CARDCONF2 & 0x1) {
+        Debug("Cartridge was not detected");
+        return 1;
+    }
+
+    // initialize cartridge
+    Cart_Init();
+    cartId = Cart_GetID();
+    Debug("Cartridge ID: %08X", Cart_GetID());
+    Debug("Cartridge type: %s", (cartId & 0x10000000) ? "CTR" : "NTR/TWL");
+
+    // check options vs. cartridge type
+    if (cartId & 0x10000000) {
+        Debug("Not possible for CTR carts");
+        return 1;
+    }
+    
+    // preparations
+    saveType = cardEepromGetType();
+    saveSize = cardEepromGetSize();
+    Debug("eeprom type: %i", saveType);
+    Debug("eeprom size: %u kB", saveSize / 1024);
+    if ((saveType <= 0) || (saveSize > BUFFER_MAX_SIZE)) {
+        Debug("Invalid eeprom chip detected or not available");
+        return 1;
+    }
+    Debug("");
+    
+    if (param & CD_FLASH) {
+        // user file select, load & write
+        if (InputFileNameSelector(filename, "ndscart.sav", NULL, NULL, 0, saveSize, true) != 0)
+            return 1;
+        if (FileGetData(filename, buffer, saveSize, 0) != saveSize) {
+            Debug("Error reading file");
+            return 1;
+        }
+        Debug("Writing savegame...");
+        // full erase for eeprom type 3
+        if (saveType == 3) cardEepromChipErase();
+        cardWriteEeprom(0, buffer, saveSize, saveType);
+    } else {
+        Debug("Reading savegame...");
+        cardReadEeprom(0, buffer, saveSize, saveType);
+        if (OutputFileNameSelector(filename, "ndscart.sav", NULL) != 0)
+            return 1;
+        if (FileDumpData(filename, buffer, saveSize) != saveSize) {
+            Debug("Error writing file");
+            return 1;
+        }
+    }
+    
     
     return 0;
 }

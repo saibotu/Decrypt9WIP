@@ -91,12 +91,20 @@ const char *DumpGameCartFullDesc    = "Dump the inserted gamecart to the Game di
                                       "Game directory as a ready-to-install CIA file.",
 
            *DumpPrivateHeaderDesc   = "Dump the private header of the inserted gamecart "
-                                      "to the Game directory, for use with flashcarts.";
+                                      "to the Game directory, for use with flashcarts.",
+                                      
+           *DumpCartSaveDesc        = "Dump the savegame from the inserted gamecart.\n\n"
+           
+                                      "Currently only works for NDS type gamecarts",
+                                      
+           *FlashCartSaveDesc       = "Flash a savegame to the inserted gamecart.\n\n"
+           
+                                      "Currently only works for NDS type gamecarts";
 
 
 // NDS Flashcart Options
 const char *AK2iDumpDesc            = "Dump the AK2i flashcart bootrom to the Game "
-                                      "directory.\n\n",
+                                      "directory.",
 
            *AK2iInjectDesc          = "Inject the Ak2i flashcart bootrom from the Game "
                                       "directory.",

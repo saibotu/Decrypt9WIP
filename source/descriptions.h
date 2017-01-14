@@ -29,7 +29,9 @@ extern char *DumpGameCartFullDesc,
             *DumpGameCartDecFullDesc,
             *DumpGameCartDecTrimDesc,
             *DumpGameCartCIADesc,
-            *DumpPrivateHeaderDesc;
+            *DumpPrivateHeaderDesc,
+            *DumpCartSaveDesc,
+            *FlashCartSaveDesc;
 
 // NDS Flashcart Options
 extern char *AK2iDumpDesc,

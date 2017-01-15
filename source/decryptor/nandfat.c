@@ -476,7 +476,8 @@ u32 FixNandCmac(u32 param) {
             return 1;
     } else if (sscanf(f_info->path, "DATA       ???????????SYSDATA    %08llX   00000000   ", &id) == 1) { // system save
         Debug("CMAC id: %08llX", id); 
-        SetupMovableKeyY(true, 0x30, NULL);
+        if (SetupMovableKeyY(true, 0x30, NULL) != 0)
+            return 1;
         memcpy(temp + 0x00, "CTR-SYS0", 8);
         memcpy(temp + 0x08, &id, 8);
         memcpy(temp + 0x10, data + 0x100, 0x100);

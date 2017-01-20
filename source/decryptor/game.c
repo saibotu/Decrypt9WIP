@@ -2135,7 +2135,6 @@ u32 DumpTwlGameCart(u32 param)
     u8* dsibuff = BUFFER_ADDRESS;
     u8* buff = BUFFER_ADDRESS+0x8000;
     u64 offset = 0x8000;
-    char name[16];
     u32 arm9iromOffset = -1;
     int isDSi = 0;
 
@@ -2148,16 +2147,12 @@ u32 DumpTwlGameCart(u32 param)
         return 1;
     }
 
-    memset (name, 0x00, sizeof (name));
-    memcpy (name, &buff[0x00], 12);
-    Debug("Product name: %s", name);
-
-    memset (name, 0x00, sizeof (name));
-    memcpy (name, &buff[0x0C], 4 + 2);
-    Debug("Product ID: %s", name);
+    Debug("Product name: %.12s", (char*) &buff[0x00]);
+    Debug("Product ID: %.6s", (char*) &buff[0x0C]);
+    Debug("Product version: %02X", buff[0x1E]);
 
     cart_size = (128 * 1024) << buff[0x14];
-    data_size = *((u32*)&buff[0x80]);;
+    data_size = *((u32*)&buff[0x80]);
     dump_size = (param & CD_TRIM) ? data_size : cart_size;
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
@@ -2174,7 +2169,8 @@ u32 DumpTwlGameCart(u32 param)
     }
 
     Debug("");
-    snprintf(filename, 64, "/%s%s%s.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "", name);
+    snprintf(filename, 64, "/%s%s%s%02X.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "",
+        (char*) &buff[0x0C], buff[0x1E]);
 
     if (!DebugFileCreate(filename, true))
         return 1;

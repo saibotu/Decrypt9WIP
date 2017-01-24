@@ -1954,6 +1954,7 @@ u32 DumpCtrGameCart(u32 param)
     
     // output some info
     Debug("Product ID: %.16s", ncch->productcode);
+    Debug("Product version: %02u", ((u8*)ncsd)[0x312]);
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
     if (data_size > cart_size) {
@@ -1994,8 +1995,13 @@ u32 DumpCtrGameCart(u32 param)
     
     // create file, write CIA / NCSD header
     Debug("");
-    snprintf(filename, 64, "/%s%s%.16s%s.%s", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "", 
-        ncch->productcode, (param & CD_DECRYPT) ? "-dec" : "", (param & CD_MAKECIA) ? "cia" : "3ds");
+    snprintf(filename, 64, "/%s%s%.16s_%02u%s.%s",
+        GetGameDir() ? GetGameDir() : "",
+        GetGameDir() ? "/" : "",
+        ncch->productcode,
+        ((u8*)ncsd)[0x312],	// version
+        (param & CD_DECRYPT) ? "-dec" : "",
+        (param & CD_MAKECIA) ? "cia" : "3ds");
     if (!FileCreate(filename, true)) {
         Debug("Could not create output file on SD");
         return 1;
@@ -2147,12 +2153,20 @@ u32 DumpTwlGameCart(u32 param)
         return 1;
     }
 
+    // Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
+    isDSi = (buff[0x12] != 0x00);
     Debug("Product name: %.12s", (char*) &buff[0x00]);
     Debug("Product ID: %.6s", (char*) &buff[0x0C]);
-    Debug("Product version: %02X", buff[0x1E]);
+    Debug("Product version: %02u", buff[0x1E]);
 
     cart_size = (128 * 1024) << buff[0x14];
-    data_size = *((u32*)&buff[0x80]);
+    if (isDSi) {
+        // NTR used data size field does not include TWL-specific data.
+        // Use the TWL field.
+        data_size = *((u32*)&buff[0x210]);
+    } else {
+        data_size = *((u32*)&buff[0x80]);
+    }
     dump_size = (param & CD_TRIM) ? data_size : cart_size;
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);
@@ -2169,8 +2183,10 @@ u32 DumpTwlGameCart(u32 param)
     }
 
     Debug("");
-    snprintf(filename, 64, "/%s%s%s%02X.nds", GetGameDir() ? GetGameDir() : "", GetGameDir() ? "/" : "",
-        (char*) &buff[0x0C], buff[0x1E]);
+    snprintf(filename, 64, "/%s%s%.6s_%02u.nds",
+        GetGameDir() ? GetGameDir() : "",
+        GetGameDir() ? "/" : "",
+        (const char*)&buff[0x0C], buff[0x1E]);
 
     if (!DebugFileCreate(filename, true))
         return 1;
@@ -2179,10 +2195,7 @@ u32 DumpTwlGameCart(u32 param)
         return 1;
     }
     
-    // Unitcode (00h=NDS, 02h=NDS+DSi, 03h=DSi) (bit1=DSi)
-    if (buff[0x12] != 0x00) {
-        isDSi = 1;
-        
+    if (isDSi) {
         // initialize cartridge
         Cart_Init();
         //Cart_GetID();

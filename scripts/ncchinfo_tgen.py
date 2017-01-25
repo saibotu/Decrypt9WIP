@@ -12,7 +12,7 @@
 #  16 bytes   Counter
 #  16 bytes   KeyY
 #   4 bytes   Size in MB(rounded up)
-#   4 bytes   Reserved
+#   4 bytes   Size in byte
 #   4 bytes   Uses 9x SeedCrypto (0 or 1)
 #   4 bytes   Uses 7x crypto? (0 or 1)
 #   8 bytes   Title ID
@@ -220,7 +220,7 @@ def parseNCCHSection(header, type, ncchFlag3, ncchFlag7, doPrint, tab):
     if type == ncchSection.exheader:
         sectionName = 'ExHeader'
         offset = 0x200 #Always 0x200
-        sectionSize = header.exhdrSize * mediaUnitSize
+        sectionSize = 0x800 #Always 0x800
     elif type == ncchSection.exefs:
         sectionName = 'ExeFS'
         offset = header.exefsOffset * mediaUnitSize
@@ -244,9 +244,9 @@ def parseNCCHSection(header, type, ncchFlag3, ncchFlag7, doPrint, tab):
     if doPrint:
         print tab + '%s offset:  %08X' % (sectionName, offset)
         print tab + '%s counter: %s' % (sectionName, hexlify(counter))
-        print tab + '%s Megabytes(rounded up): %d' % (sectionName, sectionMb)
+        print tab + '%s size:    %d byte' % (sectionName, sectionSize)
     
-    return struct.pack('<16s16sIIIIQ', str(counter), str(keyY), sectionMb, 0, ncchFlag7, ncchFlag3, titleId)
+    return struct.pack('<16s16sIIIIQ', str(counter), str(keyY), sectionMb, sectionSize, ncchFlag7, ncchFlag3, titleId)
 
 def genOutName(titleId, partitionName, sectionName):
     outName = b'/%s.%s.%s.xorpad' % (os.path.basename(fh.name), partitionName, sectionName)

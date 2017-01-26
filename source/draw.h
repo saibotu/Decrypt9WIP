@@ -18,7 +18,7 @@
 #define FONT_WIDTH_EXT 8
 #endif
 
-#define RGB(r,g,b) (r<<24|b<<16|g<<8|r)
+#define RGB(r,g,b) (b<<16|g<<8|r)
 
 #define COLOR_BLACK         RGB(0x00, 0x00, 0x00)
 #define COLOR_WHITE         RGB(0xFF, 0xFF, 0xFF)

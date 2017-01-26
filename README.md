@@ -222,6 +222,7 @@ You may use this under the terms of the GNU General Public License GPL v2 or und
 * osilloscorpion and idgrepthat for enabling NTR cart dumps
 * profi200 for helpful hints that first made developing some features possible
 * Al3x_10m for helping me with countless hours of testing and useful advice
+* Shadowhand for being awesome and [hosting my nightlies](https://d0k3.secretalgorithm.com/)
 * SciresM and Reisyukaku for helping me allow devkit compatibility
 * liomajor, Datalogger, zoogie, atkfromabove, mixups, key1340, k8099, Supster131, stbinan, Wolfvak, imanoob, Stary2001, kasai07 and countless others from freenode #Cakey and the GBAtemp forums for testing, feedback and helpful hints
 * Everyone I forgot about - if you think you deserve to be mentioned, just contact me

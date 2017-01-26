@@ -2160,13 +2160,9 @@ u32 DumpTwlGameCart(u32 param)
     Debug("Product version: %02u", buff[0x1E]);
 
     cart_size = (128 * 1024) << buff[0x14];
-    if (isDSi) {
-        // NTR used data size field does not include TWL-specific data.
-        // Use the TWL field.
-        data_size = *((u32*)&buff[0x210]);
-    } else {
-        data_size = *((u32*)&buff[0x80]);
-    }
+    // NTR used data size field does not include TWL-specific data.
+    // Use the TWL field.
+    data_size = (isDSi) ? *((u32*)&buff[0x210]) : *((u32*)&buff[0x80]);
     dump_size = (param & CD_TRIM) ? data_size : cart_size;
     Debug("Cartridge data size: %lluMB", cart_size / 0x100000);
     Debug("Cartridge used size: %lluMB", data_size / 0x100000);

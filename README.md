@@ -191,6 +191,15 @@ This category includes all features handling dumping of content from external ca
 * __Dump & Decrypt Cart (trim)__: Same as above, but discards the unused padding for smaller output and faster processing. This is recommended over the above feature.
 * __Dump Cart to CIA__: Use this to directly dump an inserted cartridge to a fully decrypted CIA file, which can be installed to a patched system using CIA installer software like [FBI](https://github.com/Steveice10/FBI/releases). For most users, this type of dump will be the most convenient. NTR/TWL cartridges can't be dumped to a CIA file.
 * __Dump Private Header__: Dumps the cartridge unique private header from the inserted cartridge.
+* __Flash Savegame to Cart__: Flash a savegame file to a retail game cartridge. This currently only works for NTR/TWL carts. The savegame to flash must have a filename of ndscart*.sav.
+
+### NDS Flashcart Options
+This category includes special features for certain NDS type flashcarts (currently only the AK2i).
+* __Auto NTRCARDHAX to AK2i__: This performs an automatic NTRCARDHAX injection to the AK2i flashcart.
+* __Dump AK2i__: Use this to dump the AK2i flashcart bootrom to the game directory.
+* __Inject AK2i__: Use this to inject the AK2i flashcart bootrom from the game directory.
+* __Inject NTRCARDHAX to AK2i__: Patch and inject the NTRCARDHAX payload to the AK2i flashcart. AK2i 1.41 version is required. If your AK2i is not on this version, upgrade or downgrade to it.
+* __Restore AK2i bootrom__: Restore the AK2i flashcart original bootrom.
 
 ### Maintenance Options
 This category includes special features which allow you to test and manage Decrypt9 internal functionality. 

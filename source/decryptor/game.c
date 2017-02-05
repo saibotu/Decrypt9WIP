@@ -28,9 +28,11 @@ u32 GetSdCtr(u8* ctr, const char* path)
     u32 plen = 0;
     // poor man's UTF-8 -> UTF-16
     for (u32 i = 0; i < 128; i++) {
-        hashstr[2*i] = path[i];
+        u8 symbol = path[i];
+        if ((symbol >= 'A') && (symbol <= 'Z')) symbol += ('a' - 'A');
+        hashstr[2*i] = symbol;
         hashstr[2*i+1] = 0;
-        if (path[i] == 0) {
+        if (symbol == 0) {
             plen = i;
             break;
         }

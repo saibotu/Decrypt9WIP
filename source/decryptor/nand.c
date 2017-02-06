@@ -710,7 +710,7 @@ u32 DumpNand(u32 param)
         }
         sha_update(buffer, NAND_SECTOR_SIZE * read_sectors);
     }
-
+    if (FileGetSize() < NAND_MIN_SIZE) result = 1; // very improbable
     ShowProgress(0, 0);
     FileClose();
     

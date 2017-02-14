@@ -1491,6 +1491,7 @@ u32 ConvertSdToCia(u32 param)
                 if (DebugCheckCancel())
                     return 1;
             }
+            ShowProgress(0, 0);
         }
         
         if (!tik_legit)
@@ -1542,12 +1543,13 @@ u32 ConvertSdToCia(u32 param)
         u32 c = 0;
         u32 next_offset = stub_size;
         u32 content_count = getbe16(tmd->content_count);
+        bool dlc = (tid_high == 0x0004008C);
         for (c = 0; c < content_count; c++) {
             u32 id = getbe32(content_list[c].id);
             u32 size = (u32) getbe64(content_list[c].size);
             u32 offset = next_offset;
             next_offset = offset + size;
-            snprintf(filename, 16, "/%08lx.app", id);
+            snprintf(filename, 32, (dlc) ? "/00000000/%08lx.app" : "/%08lx.app", id);
             Debug("Injecting content id %08lX (%lu kB)...", id, size / 1024);
             if (!FileOpen(titlepath)) {
                 Debug("Content not found");

@@ -60,6 +60,7 @@ u32 InitializeD9(MenuInfo *menu)
     Debug("");    
     
     if (InitFS()) {
+        char serial[16];
         Debug("Initializing SD card... success");
         FileGetData("d9logo.bin", BOT_SCREEN, 320 * 240 * 3, 0);
         Debug("Build: %s", BUILD_NAME);
@@ -78,6 +79,8 @@ u32 InitializeD9(MenuInfo *menu)
             errorlevel = (errorlevel < 1) ? 1 : errorlevel;
         if (SetupAgbCmacKeyY0x24()) // AGBSAVE CMAC KeyY
             errorlevel = (errorlevel < 1) ? 1 : errorlevel;
+        GetSerial(serial);
+        Debug("Serial number: %s", serial);
         Debug("Finalizing Initialization...");
         RemainingStorageSpace();
     } else {

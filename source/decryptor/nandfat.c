@@ -401,16 +401,21 @@ u32 GetRegion(void)
 
 u32 GetSerial(char* serial)
 {
-    PartitionInfo* p_info = GetPartitionInfo(P_CTRNAND);
-    u8 secureinfo[0x200];
-    u32 offset;
-    u32 size;
-    
-    if ((SeekFileInNand(&offset, &size, "RW         SYS        SECURE~?   ", p_info) != 0) ||
-        (DecryptNandToMem(secureinfo, offset, size, p_info) != 0))
-        return 1;
-    
-    snprintf(serial, 16, "%.15s", (char*) (secureinfo + 0x102));
+    static char serial_store[16] = { 0 };
+    if (!(*serial_store)) {
+        PartitionInfo* p_info = GetPartitionInfo(P_CTRNAND);
+        u8 secureinfo[0x200];
+        u32 offset;
+        u32 size;
+        
+        if ((SeekFileInNand(&offset, &size, "RW         SYS        SECURE~?   ", p_info) == 0) &&
+            (DecryptNandToMem(secureinfo, offset, size, p_info) == 0)) {
+            snprintf(serial_store, 16, "%.15s", (char*) (secureinfo + 0x102));
+        } else {
+            snprintf(serial_store, 16, "UNKNOWN");
+        }            
+    }
+    memcpy(serial, serial_store, 16);
     return 0;
 }
 

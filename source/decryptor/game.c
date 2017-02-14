@@ -1980,8 +1980,8 @@ u32 DumpCtrGameCart(u32 param)
         dump_size = (param & CD_TRIM) ? data_size : cart_size;
         Debug("Cartridge dump size: %lluMB", dump_size / 0x100000);
         if ((dump_size == 0x100000000) && (data_size < dump_size)) {
-            Debug("4GB rom, ignoring last sector");
-            dump_size -= 0x200; // remove the last sector for 4GB ROMs
+            Debug("Warning: 4GB rom, ignoring last byte");
+            dump_size--; // remove the last byte for 4GB carts
         } else if (dump_size >= 0x100000000) { // should not happen
             Debug("Error: Too big for the FAT32 file system");
             if (!(param & CD_TRIM))

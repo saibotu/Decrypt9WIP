@@ -59,15 +59,8 @@
 #define DBG_N_CHARS_Y ((DBG_END_Y - DBG_START_Y) / DBG_STEP_Y)
 #define DBG_N_CHARS_X (((DBG_END_X - DBG_START_X) / FONT_WIDTH) + 1)
 
-#ifdef EXEC_GATEWAY
-	#define TOP_SCREEN (u8*)(*(u32*)((uint32_t)0x080FFFC0 + 4 * (*(u32*)0x080FFFD8 & 1)))
-	#define BOT_SCREEN (u8*)(*(u32*)((uint32_t)0x080FFFD0 + 4 * (*(u32*)0x080FFFDC & 1)))
-#elif defined EXEC_A9LH
-	#define TOP_SCREEN (u8*)(*(u32*)0x23FFFE00)
-	#define BOT_SCREEN (u8*)(*(u32*)0x23FFFE08)
-#else
-	#error "Unknown execution method"
-#endif
+#define TOP_SCREEN (u8*)(*(u32*)0x23FFFE00)
+#define BOT_SCREEN (u8*)(*(u32*)0x23FFFE08)
 
 #define ScreenWidth(x)       (((x) == (TOP_SCREEN) ? 400 : 320))
 #define IsCharPartOfWord(x)  (((x) >= 'a' && (x) <= 'z') || ((x) >= '0' && (x) <= '9') || ((x) >= 'A' && (x) <= 'Z'))

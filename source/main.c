@@ -209,7 +209,7 @@ int main()
                 { "NAND Backup (min size)",       DumpNandMinDesc,         &DumpNand,              NB_MINSIZE },
                 { "NAND Restore",                 RestoreNandDesc,         &RestoreNand,           N_NANDWRITE | N_A9LHWRITE },
                 { "NAND Restore (forced)",        RestoreNandForcedDesc,   &RestoreNand,           N_NANDWRITE | N_A9LHWRITE | NR_NOCHECKS },
-                { "NAND Restore (keep a9lh)",     RestoreNandKeepHaxDesc,  &RestoreNand,           N_NANDWRITE | NR_KEEPA9LH },
+                { "NAND Restore (keep hax)",      RestoreNandKeepHaxDesc,  &RestoreNand,           N_NANDWRITE | NR_KEEPA9LH },
                 { "Validate NAND Dump",           ValidateNandDumpDesc,    &ValidateNandDump,      0 }
             }
         },
